@@ -1,0 +1,15 @@
+{
+  "name": "claude-qr",
+  "version": "1.0.0",
+  "description": "Remote control Claude Code from your phone via QR code",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "ws": "^8.16.0"
+  }
+}

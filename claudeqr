@@ -1,0 +1,52 @@
+#!/bin/bash
+# claudeqr — Launch Claude Code with phone remote control
+# Usage: claudeqr [claude args...]
+
+# Resolve symlinks to get the real project directory
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")")" && pwd)"
+SESSION_NAME="claude-qr"
+PORT=3456
+LOG="/tmp/claudeqr-server.log"
+
+cleanup() {
+  if [ -n "$SERVER_PID" ]; then
+    kill "$SERVER_PID" 2>/dev/null
+  fi
+  rm -f /tmp/claudeqr-info.json
+}
+trap cleanup EXIT
+
+# Kill any existing server on our port
+lsof -ti:$PORT 2>/dev/null | xargs kill 2>/dev/null
+sleep 0.3
+# Kill any existing tmux session with our name
+tmux kill-session -t "$SESSION_NAME" 2>/dev/null
+
+# Create the tmux session with a clean environment (strip CLAUDECODE var)
+tmux new-session -d -s "$SESSION_NAME" -x "$(tput cols)" -y "$(tput lines)" \
+  "env -u CLAUDECODE zsh -l"
+
+# Give the shell a moment to initialize
+sleep 1
+
+# Start the web server in the background (log output for debugging)
+CLAUDEQR_SESSION="$SESSION_NAME" CLAUDEQR_PORT="$PORT" \
+  node "$SCRIPT_DIR/server.js" > "$LOG" 2>&1 &
+SERVER_PID=$!
+
+# Wait for server to be ready (check both info file and port)
+for i in $(seq 1 40); do
+  if lsof -ti:$PORT &>/dev/null; then
+    break
+  fi
+  sleep 0.25
+done
+
+# Bind Ctrl+B, r to instantly show the QR code (no AI round trip)
+tmux bind-key -T prefix r split-pane -vb -l 22 "$SCRIPT_DIR/show-qr.sh"
+
+# Start Claude Code inside the tmux session, passing through all args
+tmux send-keys -t "$SESSION_NAME" "claude $*" Enter
+
+# Attach to the tmux session — user sees Claude in their terminal as usual
+tmux attach -t "$SESSION_NAME"
