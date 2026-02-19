@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const qrcode = require('qrcode-terminal');
 
-const infoPath = '/tmp/claudeqr-info.json';
+const INSTANCE_ID = process.env.CLAUDEQR_INSTANCE || 'default';
+const infoPath = `/tmp/claudeqr-${INSTANCE_ID}-info.json`;
 
 if (!fs.existsSync(infoPath)) {
   console.log('\n  claudeQR server is not running.');

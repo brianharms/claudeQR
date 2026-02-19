@@ -1,26 +1,35 @@
 #!/bin/bash
 # claudeqr — Launch Claude Code with phone remote control
 # Usage: claudeqr [claude args...]
+# Supports multiple simultaneous instances (unique session + port per window)
 
 # Resolve symlinks to get the real project directory
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")")" && pwd)"
-SESSION_NAME="claude-qr"
+
+# Generate a unique instance ID (short random hex)
+INSTANCE_ID=$(hexdump -n 3 -e '3/1 "%02x"' /dev/urandom)
+SESSION_NAME="clq-${INSTANCE_ID}"
+TMP_PREFIX="/tmp/claudeqr-${INSTANCE_ID}"
+LOG="${TMP_PREFIX}-server.log"
+
+# Find an available port starting from 3456
 PORT=3456
-LOG="/tmp/claudeqr-server.log"
+while lsof -ti:$PORT &>/dev/null; do
+  PORT=$((PORT + 1))
+done
 
 cleanup() {
-  if [ -n "$SERVER_PID" ]; then
-    kill "$SERVER_PID" 2>/dev/null
+  # Only tear down the server if the tmux session is gone.
+  # If the user just detached, the session (and Claude) are still alive
+  # and the server needs to keep running for the QR feature.
+  if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
+    if [ -n "$SERVER_PID" ]; then
+      kill "$SERVER_PID" 2>/dev/null
+    fi
+    rm -f "${TMP_PREFIX}"-*
   fi
-  rm -f /tmp/claudeqr-info.json
 }
 trap cleanup EXIT
-
-# Kill any existing server on our port
-lsof -ti:$PORT 2>/dev/null | xargs kill 2>/dev/null
-sleep 0.3
-# Kill any existing tmux session with our name
-tmux kill-session -t "$SESSION_NAME" 2>/dev/null
 
 # Create the tmux session with a clean environment (strip CLAUDECODE var)
 tmux new-session -d -s "$SESSION_NAME" -x "$(tput cols)" -y "$(tput lines)" \
@@ -30,11 +39,11 @@ tmux new-session -d -s "$SESSION_NAME" -x "$(tput cols)" -y "$(tput lines)" \
 sleep 1
 
 # Start the web server in the background (log output for debugging)
-CLAUDEQR_SESSION="$SESSION_NAME" CLAUDEQR_PORT="$PORT" \
+CLAUDEQR_SESSION="$SESSION_NAME" CLAUDEQR_PORT="$PORT" CLAUDEQR_INSTANCE="$INSTANCE_ID" \
   node "$SCRIPT_DIR/server.js" > "$LOG" 2>&1 &
 SERVER_PID=$!
 
-# Wait for server to be ready (check both info file and port)
+# Wait for server to be ready
 for i in $(seq 1 40); do
   if lsof -ti:$PORT &>/dev/null; then
     break
@@ -43,7 +52,8 @@ for i in $(seq 1 40); do
 done
 
 # Bind Ctrl+B, r to instantly show the QR code (no AI round trip)
-tmux bind-key -T prefix r split-pane -vb -l 22 "$SCRIPT_DIR/show-qr.sh"
+tmux bind-key -T prefix r split-pane -vb -l 22 \
+  bash "$SCRIPT_DIR/show-qr.sh" "$INSTANCE_ID"
 
 # Start Claude Code inside the tmux session, passing through all args
 tmux send-keys -t "$SESSION_NAME" "claude $*" Enter

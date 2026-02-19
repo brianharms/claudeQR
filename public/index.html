@@ -2,33 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="claudeQR">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta id="themeColor" name="theme-color" content="#080808">
   <title>claudeQR</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    :root {
-      --bg: #1a1a2e;
-      --surface: #16213e;
-      --surface-light: #1f2f50;
+    /* ── Theme: Midnight (default) ── */
+    :root, [data-theme="midnight"] {
+      --bg: #080808;
+      --surface: #111;
+      --border: #1a1a1a;
       --accent: #e94560;
-      --accent-glow: rgba(233, 69, 96, 0.3);
-      --text: #eee;
-      --text-dim: #8892a4;
-      --terminal-bg: #0f0f1a;
-      --terminal-text: #c8d6e5;
+      --accent-dim: rgba(233, 69, 96, 0.15);
+      --text: #e8e8e8;
+      --text-mid: #777;
+      --text-dim: #444;
+      --terminal-bg: #0a0a0a;
+      --terminal-text: #b0b0b0;
       --success: #2ed573;
+      --theme-color: #080808;
+    }
+
+    /* ── Theme: Terminal ── */
+    [data-theme="terminal"] {
+      --bg: #000000;
+      --surface: #0a0a0a;
+      --border: #1a1a1a;
+      --accent: #00ff41;
+      --accent-dim: rgba(0, 255, 65, 0.1);
+      --text: #00ff41;
+      --text-mid: #00aa2a;
+      --text-dim: #005f17;
+      --terminal-bg: #000000;
+      --terminal-text: #00dd38;
+      --success: #00ff41;
+      --theme-color: #000000;
+    }
+
+    /* ── Theme: Paper ── */
+    [data-theme="paper"] {
+      --bg: #f2f0eb;
+      --surface: #e8e5df;
+      --border: #d5d0c8;
+      --accent: #e94560;
+      --accent-dim: rgba(233, 69, 96, 0.1);
+      --text: #1a1a1a;
+      --text-mid: #666;
+      --text-dim: #999;
+      --terminal-bg: #faf8f5;
+      --terminal-text: #333;
+      --success: #2a9d4e;
+      --theme-color: #f2f0eb;
+    }
+
+    /* ── Theme: Sage ── */
+    [data-theme="sage"] {
+      --bg: #1a1f1a;
+      --surface: #222822;
+      --border: #2a332a;
+      --accent: #8fbc8f;
+      --accent-dim: rgba(143, 188, 143, 0.12);
+      --text: #d4ddd4;
+      --text-mid: #7a8a7a;
+      --text-dim: #4a5a4a;
+      --terminal-bg: #161b16;
+      --terminal-text: #a0b8a0;
+      --success: #8fbc8f;
+      --theme-color: #1a1f1a;
+    }
+
+    /* ── Theme: Electric ── */
+    [data-theme="electric"] {
+      --bg: #0a0018;
+      --surface: #120025;
+      --border: #1f0040;
+      --accent: #00d4ff;
+      --accent-dim: rgba(0, 212, 255, 0.1);
+      --text: #e0e8ff;
+      --text-mid: #6670aa;
+      --text-dim: #3a4070;
+      --terminal-bg: #080014;
+      --terminal-text: #90a0dd;
+      --success: #00ffaa;
+      --theme-color: #0a0018;
     }
 
     html, body {
       height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
       overflow: hidden;
       -webkit-text-size-adjust: 100%;
     }
@@ -38,64 +111,227 @@
       flex-direction: column;
       height: 100%;
       height: 100dvh;
+      padding-top: env(safe-area-inset-top);
     }
 
+    /* ── Header ── */
     .header {
-      padding: 12px 16px;
-      background: var(--surface);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
-    }
-
-    .header h1 {
-      font-size: 17px;
-      font-weight: 600;
-      letter-spacing: -0.3px;
-    }
-
-    .status {
       display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand h1 {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .brand .sub {
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--text-dim);
     }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
+    .theme-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 0;
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: border-color 0.2s;
+      margin-top: -2px;
+    }
+
+    .theme-btn:active {
+      transform: scale(0.92);
+    }
+
+    .theme-swatch {
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: var(--accent);
       transition: background 0.3s;
     }
 
-    .status-dot.connected {
-      background: var(--success);
-      box-shadow: 0 0 6px rgba(46, 213, 115, 0.5);
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
     }
 
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      transition: background 0.4s, box-shadow 0.4s;
+    }
+
+    .status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(46, 213, 115, 0.4);
+    }
+
+    .status-label {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    /* ── Theme Picker Overlay ── */
+    .theme-picker {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .theme-picker.open {
+      display: flex;
+    }
+
+    .theme-picker-sheet {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 24px 20px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+
+    .theme-picker-title {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .theme-options {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .theme-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      font-family: inherit;
+      text-align: left;
+      width: 100%;
+    }
+
+    .theme-option:active {
+      background: var(--bg);
+    }
+
+    .theme-option.active {
+      border-color: var(--border);
+      background: var(--bg);
+    }
+
+    .theme-option-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+    }
+
+    .theme-option.active .theme-option-dot {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-dim);
+    }
+
+    .theme-option-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .theme-option-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .theme-option-desc {
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Terminal ── */
     .terminal {
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
-      padding: 12px;
+      padding: 16px 20px;
       background: var(--terminal-bg);
-      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-      font-size: 12px;
-      line-height: 1.5;
+      font-size: 11px;
+      line-height: 1.65;
       color: var(--terminal-text);
       white-space: pre-wrap;
       word-break: break-word;
+      border-bottom: 1px solid var(--border);
     }
 
+    .terminal::-webkit-scrollbar {
+      width: 0;
+    }
+
+    .connecting-msg {
+      color: var(--text-dim);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* ── Input Area ── */
     .input-area {
-      padding: 10px 12px;
-      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      padding: 14px 16px;
+      padding-bottom: max(14px, env(safe-area-inset-bottom));
       background: var(--surface);
-      border-top: 1px solid rgba(255,255,255,0.06);
       flex-shrink: 0;
     }
 
@@ -112,15 +348,15 @@
 
     textarea {
       width: 100%;
-      min-height: 42px;
+      min-height: 40px;
       max-height: 120px;
-      padding: 10px 14px;
-      background: var(--surface-light);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 20px;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 0;
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
-      font-size: 16px;
+      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
       line-height: 1.4;
       resize: none;
       outline: none;
@@ -128,65 +364,154 @@
     }
 
     textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-glow);
+      border-color: var(--text-dim);
     }
 
     textarea::placeholder {
       color: var(--text-dim);
+      font-size: 11px;
+      letter-spacing: 0.03em;
     }
 
-    .send-btn {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: none;
-      color: white;
-      font-size: 18px;
+    .action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 0;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text-dim);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       flex-shrink: 0;
-      transition: transform 0.15s, opacity 0.15s;
-      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s;
     }
 
-    .send-btn:active {
-      transform: scale(0.9);
+    .action-btn:active {
+      transform: scale(0.94);
     }
 
-    .send-btn:disabled {
-      opacity: 0.4;
+    .action-btn:disabled {
+      opacity: 0.25;
     }
 
-    .send-btn svg {
-      width: 20px;
-      height: 20px;
+    .action-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .action-btn.send-btn {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .action-btn.send-btn svg {
       fill: white;
     }
 
-    .reconnecting {
+    .action-btn.send-btn:disabled {
+      opacity: 0.3;
+    }
+
+    .action-btn.mic-btn svg {
+      fill: var(--text-dim);
+      transition: fill 0.2s;
+    }
+
+    .action-btn.mic-btn.listening {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .action-btn.mic-btn.listening svg {
+      fill: var(--accent);
+    }
+
+    .mic-pulse {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--accent);
+      opacity: 0;
+      animation: pulse 1.5s ease-out infinite;
+    }
+
+    .action-btn.mic-btn.listening .mic-pulse {
+      display: block;
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+      100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+    }
+
+    /* ── Listening banner ── */
+    .listening-banner {
+      display: none;
+      padding: 6px 20px;
+      background: var(--accent-dim);
+      border-bottom: 1px solid var(--accent-dim);
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
       text-align: center;
-      padding: 20px;
-      color: var(--text-dim);
-      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .listening-banner.active {
+      display: block;
+    }
+
+    /* ── Fullscreen prompt ── */
+    .fs-prompt {
+      display: none;
+      padding: 8px 20px;
+      background: var(--accent-dim);
+      border-bottom: 1px solid var(--accent-dim);
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      text-align: center;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .fs-prompt.visible {
+      display: block;
     }
   </style>
 </head>
 <body>
   <div class="app">
     <div class="header">
-      <h1>claudeQR</h1>
-      <div class="status">
+      <div class="header-left">
+        <div class="brand">
+          <h1>CLAUDE QR</h1>
+          <span class="sub">Remote Terminal</span>
+        </div>
+        <button class="theme-btn" id="themeBtn" aria-label="Change theme">
+          <div class="theme-swatch"></div>
+        </button>
+      </div>
+      <div class="status-badge">
         <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Connecting...</span>
+        <span class="status-label" id="statusText">Connecting</span>
       </div>
     </div>
 
+    <div class="fs-prompt" id="fsPrompt">Tap for fullscreen</div>
+    <div class="listening-banner" id="listeningBanner">Listening...</div>
+
     <div class="terminal" id="terminal">
-      <div class="reconnecting" id="reconnectMsg">Connecting to terminal...</div>
+      <div class="connecting-msg" id="reconnectMsg">Connecting to terminal...</div>
     </div>
 
     <div class="input-area">
@@ -195,31 +520,136 @@
           <textarea
             id="input"
             rows="1"
-            placeholder="Type or dictate a message..."
+            placeholder="message"
             autocomplete="off"
             autocorrect="on"
             spellcheck="true"
           ></textarea>
         </div>
-        <button class="send-btn" id="sendBtn" disabled>
-          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        <button class="action-btn mic-btn" id="micBtn" style="position:relative;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="1" width="6" height="12" rx="3"/>
+            <path d="M19 10v1a7 7 0 0 1-14 0v-1"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+          </svg>
+          <div class="mic-pulse"></div>
+        </button>
+        <button class="action-btn send-btn" id="sendBtn" disabled>
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
     </div>
   </div>
 
+  <!-- Theme Picker -->
+  <div class="theme-picker" id="themePicker">
+    <div class="theme-picker-sheet">
+      <div class="theme-picker-title">Theme</div>
+      <div class="theme-options" id="themeOptions"></div>
+    </div>
+  </div>
+
   <script>
+    // ── Elements ──
     const terminal = document.getElementById('terminal');
     const reconnectMsg = document.getElementById('reconnectMsg');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('sendBtn');
+    const micBtn = document.getElementById('micBtn');
     const statusDot = document.getElementById('statusDot');
     const statusText = document.getElementById('statusText');
+    const listeningBanner = document.getElementById('listeningBanner');
+    const themeBtn = document.getElementById('themeBtn');
+    const themePicker = document.getElementById('themePicker');
+    const themeOptions = document.getElementById('themeOptions');
+    const fsPrompt = document.getElementById('fsPrompt');
+    const themeColorMeta = document.getElementById('themeColor');
 
     let ws = null;
     let reconnectTimer = null;
+    let isConnected = false;
 
-    // Strip ANSI escape codes for clean display
+    // ── Themes ──
+    const themes = [
+      { id: 'midnight',  name: 'Midnight',  desc: 'Dark mono, red accent',    dot: '#e94560' },
+      { id: 'terminal',  name: 'Terminal',   desc: 'Classic green on black',   dot: '#00ff41' },
+      { id: 'paper',     name: 'Paper',      desc: 'Light, warm, minimal',     dot: '#e94560' },
+      { id: 'sage',      name: 'Sage',       desc: 'Dark olive, muted green',  dot: '#8fbc8f' },
+      { id: 'electric',  name: 'Electric',   desc: 'Deep purple, cyan accent', dot: '#00d4ff' },
+    ];
+
+    let currentTheme = localStorage.getItem('claudeqr-theme') || 'midnight';
+
+    function applyTheme(id) {
+      currentTheme = id;
+      document.documentElement.setAttribute('data-theme', id);
+      localStorage.setItem('claudeqr-theme', id);
+
+      // Update meta theme-color for browser chrome
+      const theme = themes.find(t => t.id === id);
+      const style = getComputedStyle(document.documentElement);
+      const bgColor = style.getPropertyValue('--bg').trim();
+      themeColorMeta.setAttribute('content', bgColor);
+
+      renderThemeOptions();
+    }
+
+    function renderThemeOptions() {
+      themeOptions.innerHTML = themes.map(t => `
+        <button class="theme-option ${t.id === currentTheme ? 'active' : ''}" data-theme="${t.id}">
+          <div class="theme-option-dot" style="background:${t.dot}"></div>
+          <div class="theme-option-info">
+            <div class="theme-option-name">${t.name}</div>
+            <div class="theme-option-desc">${t.desc}</div>
+          </div>
+        </button>
+      `).join('');
+
+      themeOptions.querySelectorAll('.theme-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          applyTheme(btn.dataset.theme);
+          setTimeout(() => themePicker.classList.remove('open'), 150);
+        });
+      });
+    }
+
+    themeBtn.addEventListener('click', () => {
+      renderThemeOptions();
+      themePicker.classList.add('open');
+    });
+
+    themePicker.addEventListener('click', (e) => {
+      if (e.target === themePicker) themePicker.classList.remove('open');
+    });
+
+    applyTheme(currentTheme);
+
+    // ── Fullscreen ──
+    function isFullscreen() {
+      return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    }
+
+    function isStandalone() {
+      return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    }
+
+    function requestFullscreen() {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+      fsPrompt.classList.remove('visible');
+    }
+
+    // Show fullscreen prompt on Android Chrome (iOS doesn't support Fullscreen API)
+    if (!isStandalone() && !isFullscreen() && document.documentElement.requestFullscreen) {
+      fsPrompt.classList.add('visible');
+      fsPrompt.addEventListener('click', requestFullscreen);
+    }
+
+    // ── ANSI stripping ──
     function stripAnsi(str) {
       return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
                 .replace(/\x1b\][^\x07]*\x07/g, '')
@@ -227,18 +657,21 @@
                 .replace(/\x1b[\[\]()#;?]*[0-9;]*[a-zA-Z@]/g, '');
     }
 
+    // ── Status ──
     function setStatus(connected) {
+      isConnected = connected;
       statusDot.className = 'status-dot' + (connected ? ' connected' : '');
       statusText.textContent = connected ? 'Connected' : 'Disconnected';
       sendBtn.disabled = !connected;
     }
 
+    // ── WebSocket ──
     function connect() {
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token');
 
       if (!token) {
-        terminal.textContent = 'Missing auth token. Please scan the QR code again.';
+        reconnectMsg.textContent = 'NO AUTH TOKEN — SCAN QR AGAIN';
         return;
       }
 
@@ -256,37 +689,31 @@
           if (msg.type === 'output') {
             const cleaned = stripAnsi(msg.data).trimEnd();
             terminal.textContent = cleaned;
-            // Auto-scroll to bottom
             terminal.scrollTop = terminal.scrollHeight;
           }
-        } catch {
-          // ignore
-        }
+        } catch {}
       };
 
       ws.onclose = () => {
         setStatus(false);
         reconnectMsg.style.display = 'block';
-        reconnectMsg.textContent = 'Disconnected. Reconnecting...';
+        reconnectMsg.textContent = 'Disconnected — reconnecting...';
         reconnectTimer = setTimeout(connect, 2000);
       };
 
-      ws.onerror = () => {
-        ws.close();
-      };
+      ws.onerror = () => ws.close();
     }
 
+    // ── Send ──
     function send() {
       const text = input.value.trim();
       if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-
       ws.send(JSON.stringify({ type: 'input', data: text }));
       input.value = '';
       autoResize();
       input.focus();
     }
 
-    // Auto-resize textarea
     function autoResize() {
       input.style.height = 'auto';
       input.style.height = Math.min(input.scrollHeight, 120) + 'px';
@@ -294,7 +721,6 @@
 
     input.addEventListener('input', autoResize);
 
-    // Send on Enter (without Shift)
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -304,7 +730,59 @@
 
     sendBtn.addEventListener('click', send);
 
-    // Prevent iOS zoom on double-tap
+    // ── Speech Recognition ──
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('listening');
+        listeningBanner.classList.add('active');
+      };
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        input.value = transcript;
+        autoResize();
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        listeningBanner.classList.remove('active');
+        if (input.value.trim()) {
+          send();
+        }
+      };
+
+      recognition.onerror = () => {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        listeningBanner.classList.remove('active');
+      };
+
+      micBtn.addEventListener('click', () => {
+        if (isListening) {
+          recognition.stop();
+        } else {
+          recognition.start();
+        }
+      });
+    } else {
+      micBtn.style.display = 'none';
+    }
+
+    // ── Prevent iOS zoom on double-tap ──
     let lastTouchEnd = 0;
     document.addEventListener('touchend', (e) => {
       const now = Date.now();

@@ -6,10 +6,13 @@ const crypto = require('crypto');
 const os = require('os');
 const path = require('path');
 const QRCode = require('qrcode');
+const fs = require('fs');
 
 const SESSION_NAME = process.env.CLAUDEQR_SESSION || 'claude-qr';
 const PORT = parseInt(process.env.CLAUDEQR_PORT || '3456', 10);
+const INSTANCE_ID = process.env.CLAUDEQR_INSTANCE || 'default';
 const AUTH_TOKEN = crypto.randomBytes(3).toString('hex');
+const TMP_PREFIX = `/tmp/claudeqr-${INSTANCE_ID}`;
 
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
@@ -144,7 +147,7 @@ wss.on('connection', (ws, req) => {
 
   // Signal the QR pane to auto-close
   try {
-    require('fs').writeFileSync('/tmp/claudeqr-connected', 'true');
+    fs.writeFileSync(`${TMP_PREFIX}-connected`, 'true');
   } catch {}
 
   for (const w of watchers) {
@@ -183,14 +186,14 @@ server.listen(PORT, '0.0.0.0', () => {
   const ip = getLocalIP();
   const mobileUrl = `http://${ip}:${PORT}/${AUTH_TOKEN}`;
   // Write connection info so the launcher script can read it
-  const infoPath = '/tmp/claudeqr-info.json';
-  const fs = require('fs');
+  const infoPath = `${TMP_PREFIX}-info.json`;
   fs.writeFileSync(infoPath, JSON.stringify({
     mobileUrl,
     qrUrl: `http://localhost:${PORT}/qr`,
     token: AUTH_TOKEN,
     session: SESSION_NAME,
     port: PORT,
+    instance: INSTANCE_ID,
   }));
 
   // Pre-generate QR code ASCII art to a text file for the /qr slash command
@@ -207,8 +210,8 @@ server.listen(PORT, '0.0.0.0', () => {
       '  URL: ' + mobileUrl,
       '',
     ];
-    fs.writeFileSync('/tmp/claudeqr-ascii.txt', lines.join('\n'));
+    fs.writeFileSync(`${TMP_PREFIX}-ascii.txt`, lines.join('\n'));
   });
 
-  console.log(`claudeQR server ready on port ${PORT}`);
+  console.log(`claudeQR server ready on port ${PORT} (instance ${INSTANCE_ID})`);
 });
