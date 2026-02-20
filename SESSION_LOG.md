@@ -124,3 +124,48 @@ Debug and fix the `qr` command not working in `clq` sessions, fix broken symlink
 - Set up Tailscale: `tailscale cert` for HTTPS, update server to use the Tailscale hostname
 - Test the redesigned mobile UI on an actual phone (themes, mic button, fullscreen)
 - Verify multi-instance `qr` command works end-to-end (hook → split-pane → QR display → phone connect)
+
+---
+
+## Session — 2026-02-20 14:23
+
+### Goal
+Make the phone interface look slick with a specific design direction, figure out fullscreen phone experience, and customize the QR code display to use ASCII characters with terminal-native colors.
+
+### Accomplished
+- **ASCII art QR code**: Rewrote `qr-display.js` to render QR codes using random ASCII characters (`A-Z`, `a-z`, `0-9`, symbols) for filled modules and spaces for empty modules. Each module is 2 chars wide for square aspect ratio. Uses `qrcode` package raw matrix (`QRCode.create()`) instead of `qrcode-terminal` block characters.
+- **Updated server pre-gen**: `server.js` ASCII QR pre-generation at startup now uses the same ASCII character renderer instead of `qrcode-terminal`.
+- **Increased pane height**: Split pane height bumped from 22 to 38 lines in both `claudeqr` (line 56) and `~/.claude/hooks/claudeqr-intercept.sh` (line 11) to accommodate the taller ASCII QR output (1 char per module row instead of half-block 2-rows-per-char).
+- **Tested rendering**: Verified ASCII QR renders correctly with a test URL — finder patterns clearly visible, good character density.
+- **Discussed fullscreen options**: PWA (Add to Home Screen) is best path for single-user — `apple-mobile-web-app-capable` meta tags already in place. Native app only needed if scan-to-open is required. Safari can feel close to fullscreen with dark bg bleeding into status bar.
+
+### In Progress / Incomplete
+- **Phone UI redesign**: User wants a very specific design aesthetic not well-represented in Claude training data. Was about to share visual references when session ended. This is the main next task.
+- **QR scannability**: ASCII QR not tested with actual phone camera. Should scan fine (cameras average brightness per module) but needs real-device verification. If scanning fails, bias char pool toward denser characters (`#@%&WMN`).
+- **Fullscreen PWA flow**: No implementation changes made — existing meta tags should work, but "Add to Home Screen" flow not tested.
+
+### Key Decisions
+- Used `QRCode.create()` raw matrix with error correction level `L` (smallest QR, sufficient for screen-to-camera scanning)
+- 2-char-wide modules for approximately square aspect ratio in terminal
+- Random character selection from full printable ASCII pool — not weighted toward dense chars (can adjust if scannability is an issue)
+- Pane height 38 lines — fits ~34-line ASCII QR output with breathing room; pane auto-closes on phone connect so temporary space loss is acceptable
+
+### Files Changed
+- `qr-display.js` — complete rewrite: ASCII character rendering via `qrcode` raw matrix
+- `server.js` — updated pre-generated ASCII QR (lines ~200-215) to use same ASCII approach
+- `claudeqr` — split pane height 22 → 38 (line 56)
+- `~/.claude/hooks/claudeqr-intercept.sh` — split pane height 22 → 38 (line 11)
+
+### Known Issues
+- ASCII QR scannability unverified on real device
+- `qrcode-terminal` package is no longer used by any code but still in `package.json` dependencies — can be removed if desired
+- Phone UI design direction not yet established — user has references to share
+
+### Running Services
+- No services started this session
+
+### Next Steps
+- **Phone UI design**: User wants to share visual references for a specific aesthetic. Pick up by asking them to share URLs/screenshots/Figma links. Redesign `public/index.html` based on their direction.
+- **Test ASCII QR scanning**: Launch `clq`, trigger QR, scan with phone camera. If it doesn't scan, try denser character pool or increase error correction to `M`.
+- **Fullscreen PWA**: Test "Add to Home Screen" flow on iPhone — verify it launches fullscreen with the dark chrome.
+- Everything from previous session's next steps still applies (Tailscale, multi-instance verification, PWA vs native decision).

@@ -52,7 +52,8 @@ for i in $(seq 1 40); do
 done
 
 # Bind Ctrl+B, r to instantly show the QR code (no AI round trip)
-tmux bind-key -T prefix r split-pane -vb -l 22 \
+# Height is generous to fit the ASCII art QR — pane auto-closes on connect
+tmux bind-key -T prefix r split-pane -vb -l 38 \
   bash "$SCRIPT_DIR/show-qr.sh" "$INSTANCE_ID"
 
 # Start Claude Code inside the tmux session, passing through all args

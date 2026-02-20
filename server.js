@@ -196,22 +196,27 @@ server.listen(PORT, '0.0.0.0', () => {
     instance: INSTANCE_ID,
   }));
 
-  // Pre-generate QR code ASCII art to a text file for the /qr slash command
-  const qrcodeterminal = require('qrcode-terminal');
-  qrcodeterminal.generate(mobileUrl, { small: true }, (code) => {
-    const lines = [
-      '',
-      '  ╔══════════════════════════════════════════╗',
-      '  ║         claudeQR — Scan to Connect       ║',
-      '  ╚══════════════════════════════════════════╝',
-      '',
-      ...code.split('\n').map(l => '    ' + l),
-      '',
-      '  URL: ' + mobileUrl,
-      '',
-    ];
-    fs.writeFileSync(`${TMP_PREFIX}-ascii.txt`, lines.join('\n'));
-  });
+  // Pre-generate ASCII art QR to a text file
+  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*+=!?<>{}[]~;:';
+  const randChar = () => CHARS[Math.floor(Math.random() * CHARS.length)];
+  const qrData = QRCode.create(mobileUrl, { errorCorrectionLevel: 'L' });
+  const qrSize = qrData.modules.size;
+  const qrMods = qrData.modules.data;
+  const quiet = 2;
+  const asciiLines = ['', '  CLAUDEQR — SCAN TO CONNECT', ''];
+  for (let row = -quiet; row < qrSize + quiet; row++) {
+    let line = '    ';
+    for (let col = -quiet; col < qrSize + quiet; col++) {
+      if (row >= 0 && row < qrSize && col >= 0 && col < qrSize) {
+        line += qrMods[row * qrSize + col] ? randChar() + randChar() : '  ';
+      } else {
+        line += '  ';
+      }
+    }
+    asciiLines.push(line);
+  }
+  asciiLines.push('', '  ' + mobileUrl, '');
+  fs.writeFileSync(`${TMP_PREFIX}-ascii.txt`, asciiLines.join('\n'));
 
   console.log(`claudeQR server ready on port ${PORT} (instance ${INSTANCE_ID})`);
 });
