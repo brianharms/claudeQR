@@ -4,168 +4,48 @@ This file tracks session handoffs so the next Claude Code instance can quickly g
 
 ---
 
-## Session — 2026-02-18 20:50
+## Session — 2026-02-21 19:30
 
 ### Goal
-Build "claudeQR" — a system that lets the user take their Claude Code CLI session mobile by scanning a QR code with their phone, then interact via keyboard or voice dictation from the phone's browser.
+Implement the "mobileTerm — Session Management Overhaul" plan: transform the flat, unusable session list into a grouped, manageable hub UI with status indicators, kill buttons, and bulk cleanup. Then add a tmux auto-rename hook so sessions get human-readable names.
 
 ### Accomplished
-- Created full claudeQR project at `~/Desktop/claudeQR/`
-- Node.js server (Express + WebSocket) that bridges phone input to a tmux session running Claude Code via `tmux send-keys`
-- Mobile web UI (`public/index.html`) — dark theme, chat-style layout, auto-reconnect, iOS dictation works natively via keyboard mic button
-- QR code generation: ASCII art for terminal display, SVG for browser `/qr` route
-- Launcher script (`claudeqr`) that wraps Claude in a tmux session with a background web server, strips `CLAUDECODE` env var to avoid nested session error
-- `UserPromptSubmit` hook (`~/.claude/hooks/claudeqr-intercept.sh`) that intercepts typing "qr" and instantly shows QR code via tmux split pane — no AI round trip
-- Auto-close: QR split pane closes itself when the phone connects (server writes `/tmp/claudeqr-connected` signal file)
-- Shortened QR code: 6-char token + path-based URL (`http://ip:3456/abc123`) for a smaller QR
-- Shell alias `clq` added to `~/Desktop/dotfiles/zsh/aliases.zsh` for `claudeqr --dangerously-skip-permissions --teammate-mode tmux`
-- Symlinked `claudeqr` to `~/bin/claudeqr` and added `~/bin` to PATH
-- tmux keybinding `Ctrl+B, r` as an alternate fast QR trigger
+- Rewrote `session-manager.js` with richer tmux discovery (session_activity, session_attached), status derivation (working/idle/shell/stale), multi-pane dedup, `groupedSessions()`, `killSession()`, `killStale()`
+- Added REST endpoints in `server.js`: `DELETE /api/sessions/:name`, `POST /api/sessions/cleanup`, `GET /api/sessions/grouped`; added WebSocket `kill` and `cleanup` message types
+- Rewrote `public/index.html` hub UI with project-grouped sections, colored status dots, kill buttons per card, collapsed stale groups with "Kill All", global "Clean Up Stale (N)" button, human-readable ages
+- Restarted server (PID 46545 on port 7777) after user reported "no active sessions" (old code was still running)
+- Created `~/.claude/hooks/auto-rename-session.sh` — Stop hook that renames `clq-*` and `mt-*` tmux sessions to match the project folder name using `$CLAUDE_WORKING_DIRECTORY`
+- Added the hook to `~/.claude/settings.json` Stop hooks array
 
 ### In Progress / Incomplete
-- Phone-to-Claude end-to-end messaging not fully verified (user focused on QR display UX iteration)
-- Terminal output streaming to phone (ANSI stripping) needs real-device testing
-- Cross-network support (Tailscale / Cloudflare Tunnel / ngrok) not implemented yet
+- User has not yet verified the grouped hub UI on their phone after server restart
+- Auto-rename hook is untested — needs a fresh `clq` session launch to verify
 
 ### Key Decisions
-- Used tmux as the terminal multiplexer instead of building custom pty handling — dramatically simpler
-- Phone UI is a plain web page in mobile Safari/Chrome — no native app needed
-- Voice dictation relies on iOS keyboard's built-in mic button — no speech-to-text API required
-- Auth is a short random token baked into the QR URL — sufficient for local network use
-- Hook with exit code 2 blocks the "qr" prompt from reaching Claude AI, shows QR instantly
-- Launcher passes all CLI args through to `claude` so flags are controlled by the alias, not hardcoded
+- Stale threshold: 4 hours of inactivity
+- Only auto-rename sessions with `clq-*` or `mt-*` prefixes (preserves manually named sessions)
+- Name conflicts resolved by appending short suffix from original session name
+- `.auth-token` should not be committed (contains auth secret) — added to `.gitignore`
 
 ### Files Changed
-- `~/Desktop/claudeQR/package.json` — project manifest
-- `~/Desktop/claudeQR/server.js` — main server (Express, WebSocket, tmux bridge, QR generation)
-- `~/Desktop/claudeQR/public/index.html` — mobile web UI
-- `~/Desktop/claudeQR/claudeqr` — launcher script (executable, symlinked to `~/bin/`)
-- `~/Desktop/claudeQR/qr-display.js` — ASCII QR code generator for terminal display
-- `~/Desktop/claudeQR/show-qr.sh` — tmux split pane wrapper with auto-close on connect
-- `~/.claude/hooks/claudeqr-intercept.sh` — UserPromptSubmit hook to intercept "qr" command
-- `~/.claude/settings.json` — added claudeqr-intercept hook to UserPromptSubmit
-- `~/Desktop/dotfiles/zsh/aliases.zsh` — added `clq` alias
-- `~/.zshrc` — added `~/bin` to PATH
+- `session-manager.js` — full rewrite with grouped sessions, status, dedup, kill
+- `server.js` — added kill/cleanup REST + WebSocket endpoints, grouped broadcasts
+- `public/index.html` — grouped hub UI with status dots, kill buttons, cleanup
+- `~/.claude/hooks/auto-rename-session.sh` — new auto-rename Stop hook
+- `~/.claude/settings.json` — added auto-rename-session.sh to Stop hooks
+- `.gitignore` — added `.auth-token`
 
 ### Known Issues
-- "UserPromptSubmit operation blocked by hook" banner shows when typing "qr" — this is Claude Code's built-in behavior and cannot be suppressed
-- `os.tmpdir()` on macOS returns `/var/folders/...` not `/tmp/` — hardcoded `/tmp/` paths throughout to stay consistent
-- The `~/.claude/commands/qr.md` slash command was deleted in favor of the hook approach
-- If the user runs `claude` directly (not via `claudeqr`), the "qr" hook will fire but tmux won't be available, so nothing happens (exits silently)
+- The git remote is still `claudeQR` (`https://github.com/brianharms/claudeQR.git`) — may want to rename the repo or create a new `mobileTerm` repo
+- Existing `clq` sessions won't auto-rename until their next Claude response (hook fires on Stop)
+- Several old claudeQR files are deleted but tracked: `claudeqr`, `qr-display.js`, `show-qr.sh`, `SESSION_LOG.md` (old one)
 
 ### Running Services
-- A claudeQR server may still be running on port 3456 if the user's last `claudeqr` session wasn't cleanly exited. Kill with: `lsof -ti:3456 | xargs kill`
-- tmux session `claude-qr` may still exist. Kill with: `tmux kill-session -t claude-qr`
+- mobileTerm server: PID 46545, port 7777, `node server.js`
+- Access URL: `http://192.168.1.183:7777/?token=dd9104`
 
 ### Next Steps
-- Test phone-to-Claude messaging end-to-end: scan QR, send a message from phone, verify it appears in Claude and Claude responds
-- Test terminal output streaming back to phone — check if ANSI stripping renders cleanly
-- Add Tailscale or Cloudflare Tunnel support for cross-network access
-- Consider making the QR split pane height dynamic based on terminal size
-- Optionally add a `/qr` browser fallback (open `localhost:3456/qr` in browser) for cases where tmux split pane is inconvenient
-
----
-
-## Session — 2026-02-19 02:10
-
-### Goal
-Debug and fix the `qr` command not working in `clq` sessions, fix broken symlinks/skills, and redesign the mobile phone UI with inspiration from MUTEK, Nothing, Cloudflare, and other editorial design references.
-
-### Accomplished
-- **Fixed cleanup trap bug** in `claudeqr`: server was unconditionally killed on script exit (including tmux detach), leaving `qr` broken. Changed to only clean up when the tmux session itself is dead.
-- **Fixed tmux split-pane path quoting**: space in "Claude Projects" caused `tmux split-pane` to fail silently. Fixed by wrapping with `bash '/path/to/show-qr.sh'` in both `claudeqr-intercept.sh` and `claudeqr`.
-- **Fixed `~/.claude/CLAUDE.md` symlink**: was pointing to dead path `/Users/brianharms/Desktop/dotfiles/claude/CLAUDE.md`. Updated to point to `/Users/brianharms/Desktop/Claude Projects/dotfiles/claude/CLAUDE.md`.
-- **Symlinked skills into `~/.claude/commands/`**: `shutdown.md`, `restart.md`, `work.md` — all pointing to `~/Desktop/Claude Projects/dotfiles/claude/skills/*/SKILL.md`.
-- **Redesigned mobile UI** (`public/index.html`): complete rewrite with monospace editorial aesthetic inspired by user's reference images (MUTEK, Nothing Ear, Cloudflare Sandbox, etc.). Near-black bg, uppercase tracking, sharp square corners, minimal chrome.
-- **Added 5 themes**: Midnight (dark/red), Terminal (green-on-black), Paper (light/warm), Sage (dark olive), Electric (purple/cyan). Theme picker as bottom sheet, persists in localStorage.
-- **Added mic button**: Web Speech API (`webkitSpeechRecognition`) — tap to listen, auto-sends on speech end. Listening state shown via pulse animation + banner.
-- **Added PWA meta tags**: `apple-mobile-web-app-capable`, `black-translucent` status bar, `viewport-fit=cover`, `theme-color` (updates dynamically per theme). Enables fullscreen when added to iOS home screen.
-- **Added Fullscreen API prompt**: "Tap for fullscreen" banner on Android Chrome (iOS doesn't support Fullscreen API).
-- **Discussed native app vs PWA**: user considering building a native iOS app with custom URL scheme (`claudeqr://`) so QR scanning opens the app directly. PWA can't intercept QR scans on iOS.
-- **Discussed Tailscale implications**: stable hostname + HTTPS makes PWA approach stronger (persistent bookmarks, Universal Links possible), but still can't auto-launch PWA from QR scan on iOS.
-- **Committed and pushed** all changes (`6fa9cfa`).
-
-### In Progress / Incomplete
-- User deciding between native iOS app vs PWA approach for the phone client
-- Tailscale integration not implemented
-- Cookie-based stable-token flow for PWA across sessions not implemented
-- Multi-instance support was added by a parallel session (see `claudeqr` script changes: unique `clq-{hex}` session names, auto-port selection, namespaced temp files)
-
-### Key Decisions
-- `bash '/path/with spaces/...'` pattern for tmux split-pane commands (handles spaces in directory names)
-- Conditional cleanup trap: `tmux has-session` check before killing server
-- 5 theme palette chosen to match user's design references
-- Web Speech API for mic (no external dependencies, works in Safari + Chrome)
-- PWA is sufficient for fullscreen if user doesn't need scan-to-open. Native app needed only for that.
-
-### Files Changed
-- `claudeqr` — cleanup trap fix, tmux bind-key bash wrapper (then further modified by parallel session for multi-instance)
-- `public/index.html` — complete rewrite: themes, mic, PWA, editorial design
-- `~/.claude/hooks/claudeqr-intercept.sh` — bash wrapper for split-pane path (then further modified for `clq-{id}` pattern)
-- `~/.claude/CLAUDE.md` — symlink target updated
-- `~/.claude/commands/shutdown.md` — symlink created
-- `~/.claude/commands/restart.md` — symlink created
-- `~/.claude/commands/work.md` — symlink created
-
-### Known Issues
-- iOS Safari doesn't support Fullscreen API — only PWA "Add to Home Screen" gives true fullscreen
-- QR code scanning on iOS always opens Safari, never a PWA — native app with URL scheme is the only workaround
-- A parallel session made multi-instance changes to `claudeqr`, `server.js`, `show-qr.sh`, `qr-display.js` — those changes are committed but the hook intercept path quoting fix and cleanup trap fix should be verified in the multi-instance context
-
-### Running Services
-- claudeQR server likely running on port 3456 (PID 63432 from `clq` launch, plus PID 63196 from manual restart during debugging). Kill with: `lsof -ti:3456 | xargs kill`
-- Multiple tmux sessions may exist: `claude-qr` (old), various `clq-*` (new multi-instance). List with: `tmux ls`
-- Old `mc-*` tmux sessions from previous days still lingering. Clean up with: `tmux ls | grep mc- | cut -d: -f1 | xargs -I{} tmux kill-session -t {}`
-
-### Next Steps
-- Decide: native iOS app or PWA for the phone client
-- If PWA: implement cookie-based token persistence so home screen bookmark works across `clq` sessions
-- If native app: scaffold SwiftUI app with `claudeqr://` URL scheme + WebSocket client
-- Set up Tailscale: `tailscale cert` for HTTPS, update server to use the Tailscale hostname
-- Test the redesigned mobile UI on an actual phone (themes, mic button, fullscreen)
-- Verify multi-instance `qr` command works end-to-end (hook → split-pane → QR display → phone connect)
-
----
-
-## Session — 2026-02-20 14:23
-
-### Goal
-Make the phone interface look slick with a specific design direction, figure out fullscreen phone experience, and customize the QR code display to use ASCII characters with terminal-native colors.
-
-### Accomplished
-- **ASCII art QR code**: Rewrote `qr-display.js` to render QR codes using random ASCII characters (`A-Z`, `a-z`, `0-9`, symbols) for filled modules and spaces for empty modules. Each module is 2 chars wide for square aspect ratio. Uses `qrcode` package raw matrix (`QRCode.create()`) instead of `qrcode-terminal` block characters.
-- **Updated server pre-gen**: `server.js` ASCII QR pre-generation at startup now uses the same ASCII character renderer instead of `qrcode-terminal`.
-- **Increased pane height**: Split pane height bumped from 22 to 38 lines in both `claudeqr` (line 56) and `~/.claude/hooks/claudeqr-intercept.sh` (line 11) to accommodate the taller ASCII QR output (1 char per module row instead of half-block 2-rows-per-char).
-- **Tested rendering**: Verified ASCII QR renders correctly with a test URL — finder patterns clearly visible, good character density.
-- **Discussed fullscreen options**: PWA (Add to Home Screen) is best path for single-user — `apple-mobile-web-app-capable` meta tags already in place. Native app only needed if scan-to-open is required. Safari can feel close to fullscreen with dark bg bleeding into status bar.
-
-### In Progress / Incomplete
-- **Phone UI redesign**: User wants a very specific design aesthetic not well-represented in Claude training data. Was about to share visual references when session ended. This is the main next task.
-- **QR scannability**: ASCII QR not tested with actual phone camera. Should scan fine (cameras average brightness per module) but needs real-device verification. If scanning fails, bias char pool toward denser characters (`#@%&WMN`).
-- **Fullscreen PWA flow**: No implementation changes made — existing meta tags should work, but "Add to Home Screen" flow not tested.
-
-### Key Decisions
-- Used `QRCode.create()` raw matrix with error correction level `L` (smallest QR, sufficient for screen-to-camera scanning)
-- 2-char-wide modules for approximately square aspect ratio in terminal
-- Random character selection from full printable ASCII pool — not weighted toward dense chars (can adjust if scannability is an issue)
-- Pane height 38 lines — fits ~34-line ASCII QR output with breathing room; pane auto-closes on phone connect so temporary space loss is acceptable
-
-### Files Changed
-- `qr-display.js` — complete rewrite: ASCII character rendering via `qrcode` raw matrix
-- `server.js` — updated pre-generated ASCII QR (lines ~200-215) to use same ASCII approach
-- `claudeqr` — split pane height 22 → 38 (line 56)
-- `~/.claude/hooks/claudeqr-intercept.sh` — split pane height 22 → 38 (line 11)
-
-### Known Issues
-- ASCII QR scannability unverified on real device
-- `qrcode-terminal` package is no longer used by any code but still in `package.json` dependencies — can be removed if desired
-- Phone UI design direction not yet established — user has references to share
-
-### Running Services
-- No services started this session
-
-### Next Steps
-- **Phone UI design**: User wants to share visual references for a specific aesthetic. Pick up by asking them to share URLs/screenshots/Figma links. Redesign `public/index.html` based on their direction.
-- **Test ASCII QR scanning**: Launch `clq`, trigger QR, scan with phone camera. If it doesn't scan, try denser character pool or increase error correction to `M`.
-- **Fullscreen PWA**: Test "Add to Home Screen" flow on iPhone — verify it launches fullscreen with the dark chrome.
-- Everything from previous session's next steps still applies (Tailscale, multi-instance verification, PWA vs native decision).
+- Verify grouped hub UI on phone (refresh the page)
+- Test kill button, Kill All, Clean Up Stale from mobile
+- Launch a fresh `clq` session and verify auto-rename hook works
+- Consider renaming the GitHub remote/repo from `claudeQR` to `mobileTerm`

@@ -5,96 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="claudeQR">
+  <meta name="apple-mobile-web-app-title" content="mobileTerm">
   <meta name="mobile-web-app-capable" content="yes">
   <meta id="themeColor" name="theme-color" content="#080808">
-  <title>claudeQR</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5/css/xterm.min.css">
+  <title>mobileTerm</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    /* ── Theme: Midnight (default) ── */
+    /* ── Themes ── */
     :root, [data-theme="midnight"] {
-      --bg: #080808;
-      --surface: #111;
-      --border: #1a1a1a;
-      --accent: #e94560;
-      --accent-dim: rgba(233, 69, 96, 0.15);
-      --text: #e8e8e8;
-      --text-mid: #777;
-      --text-dim: #444;
-      --terminal-bg: #0a0a0a;
-      --terminal-text: #b0b0b0;
+      --bg: #080808; --surface: #111; --border: #1a1a1a;
+      --accent: #e94560; --accent-dim: rgba(233,69,96,0.15);
+      --text: #e8e8e8; --text-mid: #777; --text-dim: #444;
       --success: #2ed573;
-      --theme-color: #080808;
     }
-
-    /* ── Theme: Terminal ── */
     [data-theme="terminal"] {
-      --bg: #000000;
-      --surface: #0a0a0a;
-      --border: #1a1a1a;
-      --accent: #00ff41;
-      --accent-dim: rgba(0, 255, 65, 0.1);
-      --text: #00ff41;
-      --text-mid: #00aa2a;
-      --text-dim: #005f17;
-      --terminal-bg: #000000;
-      --terminal-text: #00dd38;
+      --bg: #000; --surface: #0a0a0a; --border: #1a1a1a;
+      --accent: #00ff41; --accent-dim: rgba(0,255,65,0.1);
+      --text: #00ff41; --text-mid: #00aa2a; --text-dim: #005f17;
       --success: #00ff41;
-      --theme-color: #000000;
     }
-
-    /* ── Theme: Paper ── */
     [data-theme="paper"] {
-      --bg: #f2f0eb;
-      --surface: #e8e5df;
-      --border: #d5d0c8;
-      --accent: #e94560;
-      --accent-dim: rgba(233, 69, 96, 0.1);
-      --text: #1a1a1a;
-      --text-mid: #666;
-      --text-dim: #999;
-      --terminal-bg: #faf8f5;
-      --terminal-text: #333;
+      --bg: #f2f0eb; --surface: #e8e5df; --border: #d5d0c8;
+      --accent: #e94560; --accent-dim: rgba(233,69,96,0.1);
+      --text: #1a1a1a; --text-mid: #666; --text-dim: #999;
       --success: #2a9d4e;
-      --theme-color: #f2f0eb;
     }
-
-    /* ── Theme: Sage ── */
     [data-theme="sage"] {
-      --bg: #1a1f1a;
-      --surface: #222822;
-      --border: #2a332a;
-      --accent: #8fbc8f;
-      --accent-dim: rgba(143, 188, 143, 0.12);
-      --text: #d4ddd4;
-      --text-mid: #7a8a7a;
-      --text-dim: #4a5a4a;
-      --terminal-bg: #161b16;
-      --terminal-text: #a0b8a0;
+      --bg: #1a1f1a; --surface: #222822; --border: #2a332a;
+      --accent: #8fbc8f; --accent-dim: rgba(143,188,143,0.12);
+      --text: #d4ddd4; --text-mid: #7a8a7a; --text-dim: #4a5a4a;
       --success: #8fbc8f;
-      --theme-color: #1a1f1a;
     }
-
-    /* ── Theme: Electric ── */
     [data-theme="electric"] {
-      --bg: #0a0018;
-      --surface: #120025;
-      --border: #1f0040;
-      --accent: #00d4ff;
-      --accent-dim: rgba(0, 212, 255, 0.1);
-      --text: #e0e8ff;
-      --text-mid: #6670aa;
-      --text-dim: #3a4070;
-      --terminal-bg: #080014;
-      --terminal-text: #90a0dd;
+      --bg: #0a0018; --surface: #120025; --border: #1f0040;
+      --accent: #00d4ff; --accent-dim: rgba(0,212,255,0.1);
+      --text: #e0e8ff; --text-mid: #6670aa; --text-dim: #3a4070;
       --success: #00ffaa;
-      --theme-color: #0a0018;
     }
 
     html, body {
@@ -106,248 +55,366 @@
       -webkit-text-size-adjust: 100%;
     }
 
+    /* ── Layout ── */
     .app {
       display: flex;
       flex-direction: column;
-      height: 100%;
       height: 100dvh;
       padding-top: env(safe-area-inset-top);
     }
 
-    /* ── Header ── */
-    .header {
-      padding: 16px 20px 14px;
-      border-bottom: 1px solid var(--border);
+    /* ── Top Bar ── */
+    .topbar {
       flex-shrink: 0;
+      padding: 14px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      min-height: 50px;
+    }
+    .topbar-hub, .topbar-term {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
     }
-
-    .header-left {
-      display: flex;
-      align-items: flex-start;
-      gap: 14px;
-    }
-
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .brand h1 {
+    .brand-name {
       font-size: 11px;
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text);
     }
-
-    .brand .sub {
-      font-size: 9px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--text-dim);
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-
-    .theme-btn {
-      width: 28px;
-      height: 28px;
-      border: 1px solid var(--border);
-      border-radius: 0;
-      background: var(--surface);
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-mid);
+      font-size: 16px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
-      transition: border-color 0.2s;
-      margin-top: -2px;
+      padding: 4px;
+      line-height: 1;
     }
-
-    .theme-btn:active {
-      transform: scale(0.92);
-    }
-
-    .theme-swatch {
-      width: 12px;
-      height: 12px;
+    .conn-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: var(--accent);
-      transition: background 0.3s;
+      background: var(--text-dim);
+      transition: background 0.3s, box-shadow 0.3s;
     }
-
-    .status-badge {
+    .conn-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(46,213,115,0.4);
+    }
+    .topbar-term .back-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0 8px 0 0;
+      font-family: inherit;
+    }
+    .topbar-session-name {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      flex: 1;
+    }
+    .session-dots {
       display: flex;
-      align-items: center;
       gap: 6px;
-      padding: 4px 0;
+      align-items: center;
     }
-
-    .status-dot {
+    .session-dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
+      background: var(--text-dim);
+      transition: background 0.2s;
+    }
+    .session-dot.active {
       background: var(--accent);
-      transition: background 0.4s, box-shadow 0.4s;
     }
 
-    .status-dot.connected {
-      background: var(--success);
-      box-shadow: 0 0 8px rgba(46, 213, 115, 0.4);
+    /* ── Views ── */
+    .views-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
     }
-
-    .status-label {
-      font-size: 9px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-    }
-
-    /* ── Theme Picker Overlay ── */
-    .theme-picker {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      align-items: flex-end;
-      justify-content: center;
-    }
-
-    .theme-picker.open {
+    .views-track {
       display: flex;
+      height: 100%;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+    }
+    .view {
+      min-width: 100%;
+      max-width: 100%;
+      height: 100%;
+      overflow: hidden;
     }
 
-    .theme-picker-sheet {
-      width: 100%;
-      max-width: 400px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 24px 20px;
-      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    /* ── Hub View ── */
+    .hub-scroll {
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 20px;
     }
+    .hub-scroll::-webkit-scrollbar { width: 0; }
 
-    .theme-picker-title {
-      font-size: 9px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: 16px;
+    /* ── Grouped Sessions ── */
+    .group-section {
+      margin-bottom: 20px;
     }
-
-    .theme-options {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .theme-option {
+    .group-header {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 12px 14px;
-      background: transparent;
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      justify-content: space-between;
+      padding: 0 0 8px 0;
+    }
+    .group-title {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .group-title .group-count {
+      color: var(--text-dim);
+      font-weight: 400;
+      margin-left: 6px;
+    }
+    .group-kill-all {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
       font-family: inherit;
-      text-align: left;
-      width: 100%;
+      font-size: 9px;
+      letter-spacing: 0.06em;
+      padding: 4px 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .group-kill-all:active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .group-divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 10px;
     }
 
-    .theme-option:active {
-      background: var(--bg);
+    /* ── Session Card (new) ── */
+    .session-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
-
-    .theme-option.active {
-      border-color: var(--border);
-      background: var(--bg);
+    .session-card:active {
+      border-color: var(--accent);
     }
-
-    .theme-option-dot {
-      width: 20px;
-      height: 20px;
+    .status-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       flex-shrink: 0;
-      border: 2px solid var(--border);
     }
-
-    .theme-option.active .theme-option-dot {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-dim);
+    .status-dot.working {
+      background: var(--success);
+      box-shadow: 0 0 6px rgba(46,213,115,0.4);
     }
-
-    .theme-option-info {
+    .status-dot.idle {
+      background: #f0a030;
+      box-shadow: 0 0 6px rgba(240,160,48,0.3);
+    }
+    .status-dot.shell {
+      background: var(--accent);
+      opacity: 0.6;
+    }
+    .status-dot.stale {
+      background: var(--text-dim);
+    }
+    .session-card-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .session-card-row {
       display: flex;
-      flex-direction: column;
-      gap: 1px;
+      justify-content: space-between;
+      align-items: center;
     }
-
-    .theme-option-name {
+    .session-card-name {
       font-size: 12px;
       font-weight: 500;
-      color: var(--text);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .session-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .session-card-status {
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+    }
+    .session-card-age {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+    .kill-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-dim);
+      font-family: inherit;
+      font-size: 14px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: color 0.15s, border-color 0.15s;
+      line-height: 1;
+    }
+    .kill-btn:active {
+      color: var(--accent);
+      border-color: var(--accent);
     }
 
-    .theme-option-desc {
-      font-size: 9px;
+    /* Collapsed stale summary */
+    .stale-summary {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stale-summary-text {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.02em;
+    }
+
+    /* Bottom actions */
+    .hub-bottom-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+    .new-session-btn {
+      flex: 1;
+      padding: 16px;
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: var(--text-mid);
+      font-family: inherit;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .new-session-btn:active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .cleanup-btn {
+      flex: 1;
+      padding: 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: inherit;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .cleanup-btn:active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .cleanup-btn:disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 8px;
+    }
+    .empty-icon {
+      font-size: 32px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    .empty-text {
+      font-size: 13px;
+      color: var(--text-mid);
+    }
+    .empty-sub {
+      font-size: 10px;
       color: var(--text-dim);
       letter-spacing: 0.04em;
     }
 
-    /* ── Terminal ── */
-    .terminal {
+    /* ── Terminal View ── */
+    .terminal-view {
+      display: flex;
+      flex-direction: column;
+    }
+    .term-container {
       flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 16px 20px;
-      background: var(--terminal-bg);
-      font-size: 11px;
-      line-height: 1.65;
-      color: var(--terminal-text);
-      white-space: pre-wrap;
-      word-break: break-word;
-      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--bg);
     }
-
-    .terminal::-webkit-scrollbar {
-      width: 0;
-    }
-
-    .connecting-msg {
-      color: var(--text-dim);
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
+    .term-container .xterm {
+      height: 100%;
+      padding: 8px;
     }
 
     /* ── Input Area ── */
     .input-area {
-      padding: 14px 16px;
-      padding-bottom: max(14px, env(safe-area-inset-bottom));
-      background: var(--surface);
       flex-shrink: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
     }
-
     .input-row {
       display: flex;
       gap: 8px;
       align-items: flex-end;
+      padding: 12px 16px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
     }
-
-    .input-wrapper {
+    .input-row textarea {
       flex: 1;
-      position: relative;
-    }
-
-    textarea {
-      width: 100%;
       min-height: 40px;
       max-height: 120px;
       padding: 10px 12px;
@@ -355,29 +422,26 @@
       border: 1px solid var(--border);
       border-radius: 0;
       color: var(--text);
-      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-family: inherit;
       font-size: 14px;
       line-height: 1.4;
       resize: none;
       outline: none;
       transition: border-color 0.2s;
     }
-
-    textarea:focus {
+    .input-row textarea:focus {
       border-color: var(--text-dim);
     }
-
-    textarea::placeholder {
+    .input-row textarea::placeholder {
       color: var(--text-dim);
       font-size: 11px;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
     }
-
     .action-btn {
       width: 40px;
       height: 40px;
-      border-radius: 0;
       border: 1px solid var(--border);
+      border-radius: 0;
       background: var(--bg);
       color: var(--text-dim);
       display: flex;
@@ -386,351 +450,768 @@
       cursor: pointer;
       flex-shrink: 0;
       transition: all 0.15s;
+      padding: 0;
     }
-
-    .action-btn:active {
-      transform: scale(0.94);
-    }
-
-    .action-btn:disabled {
-      opacity: 0.25;
-    }
-
-    .action-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .action-btn.send-btn {
+    .action-btn:active { transform: scale(0.94); }
+    .action-btn:disabled { opacity: 0.25; }
+    .action-btn svg { width: 18px; height: 18px; }
+    .send-btn {
       background: var(--accent);
       border-color: var(--accent);
-      color: white;
+      color: #fff;
     }
-
-    .action-btn.send-btn svg {
-      fill: white;
-    }
-
-    .action-btn.send-btn:disabled {
-      opacity: 0.3;
-    }
-
-    .action-btn.mic-btn svg {
-      fill: var(--text-dim);
-      transition: fill 0.2s;
-    }
-
-    .action-btn.mic-btn.listening {
+    .send-btn:disabled { opacity: 0.3; }
+    .mic-btn.listening {
       border-color: var(--accent);
       background: var(--accent-dim);
+      color: var(--accent);
     }
 
-    .action-btn.mic-btn.listening svg {
-      fill: var(--accent);
-    }
-
-    .mic-pulse {
-      display: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 40px;
-      height: 40px;
-      border: 1px solid var(--accent);
-      opacity: 0;
-      animation: pulse 1.5s ease-out infinite;
-    }
-
-    .action-btn.mic-btn.listening .mic-pulse {
-      display: block;
-    }
-
-    @keyframes pulse {
-      0% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
-      100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
-    }
-
-    /* ── Listening banner ── */
+    /* ── Listening Banner ── */
     .listening-banner {
       display: none;
-      padding: 6px 20px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 8px;
       background: var(--accent-dim);
-      border-bottom: 1px solid var(--accent-dim);
       font-size: 9px;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--accent);
-      text-align: center;
-      flex-shrink: 0;
+    }
+    .listening-banner.active { display: flex; }
+    .listening-bars {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      height: 14px;
+    }
+    .listening-bars span {
+      width: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+      animation: bar-bounce 0.8s ease-in-out infinite;
+    }
+    .listening-bars span:nth-child(1) { height: 4px; animation-delay: 0s; }
+    .listening-bars span:nth-child(2) { height: 8px; animation-delay: 0.1s; }
+    .listening-bars span:nth-child(3) { height: 12px; animation-delay: 0.2s; }
+    .listening-bars span:nth-child(4) { height: 8px; animation-delay: 0.3s; }
+    .listening-bars span:nth-child(5) { height: 4px; animation-delay: 0.4s; }
+    @keyframes bar-bounce {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.3); }
     }
 
-    .listening-banner.active {
-      display: block;
+    /* ── Overlays ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: var(--bg);
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top);
+      animation: slide-in 0.25s ease;
     }
-
-    /* ── Fullscreen prompt ── */
-    .fs-prompt {
-      display: none;
-      padding: 8px 20px;
-      background: var(--accent-dim);
-      border-bottom: 1px solid var(--accent-dim);
-      font-size: 9px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--accent);
-      text-align: center;
-      flex-shrink: 0;
+    @keyframes slide-in {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    .overlay-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      min-height: 50px;
+    }
+    .overlay-header .back-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 18px;
       cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+    }
+    .overlay-sheet {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    .fs-prompt.visible {
-      display: block;
+    /* ── Project Browser ── */
+    .projects-list {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
+    .project-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.1s;
+    }
+    .project-item:active { background: var(--surface); }
+    .project-live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px rgba(46,213,115,0.3);
+    }
+
+    /* ── Settings ── */
+    .settings-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 20px;
+    }
+    .setting-group { margin-bottom: 28px; }
+    .setting-label {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+    }
+    .theme-options {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .theme-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      background: transparent;
+      border: 1px solid transparent;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .theme-option:active { background: var(--bg); }
+    .theme-option.active {
+      border-color: var(--border);
+      background: var(--bg);
+    }
+    .theme-option-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .theme-option-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.05em;
+    }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      padding: 4px 0;
+    }
+    .toggle-row input[type="checkbox"] { display: none; }
+    .toggle-track {
+      width: 42px;
+      height: 24px;
+      border-radius: 12px;
+      background: var(--border);
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .toggle-row input:checked + .toggle-track {
+      background: var(--accent);
+    }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+    .toggle-row input:checked + .toggle-track .toggle-thumb {
+      transform: translateX(18px);
+    }
+
+    /* ── Spawning indicator ── */
+    .spawning-card {
+      background: var(--surface);
+      border: 1px solid var(--accent-dim);
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .spawning-text {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+    }
+    @keyframes pulse-border {
+      0%, 100% { border-color: var(--accent-dim); }
+      50% { border-color: var(--accent); }
+    }
+    .spawning-card { animation: pulse-border 1.5s ease infinite; }
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="header">
-      <div class="header-left">
-        <div class="brand">
-          <h1>CLAUDE QR</h1>
-          <span class="sub">Remote Terminal</span>
+  <div class="app" id="app">
+    <!-- Top Bar -->
+    <header class="topbar" id="topbar">
+      <div class="topbar-hub" id="topbarHub">
+        <span class="brand-name">MOBILTERM</span>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="settingsBtn" aria-label="Settings">&#9881;</button>
+          <div class="conn-dot" id="connDot"></div>
         </div>
-        <button class="theme-btn" id="themeBtn" aria-label="Change theme">
-          <div class="theme-swatch"></div>
-        </button>
       </div>
-      <div class="status-badge">
-        <div class="status-dot" id="statusDot"></div>
-        <span class="status-label" id="statusText">Connecting</span>
+      <div class="topbar-term" id="topbarTerm" style="display:none">
+        <button class="back-btn" id="backBtn">&larr;</button>
+        <span class="topbar-session-name" id="topbarSessionName"></span>
+        <div class="session-dots" id="sessionDots"></div>
+      </div>
+    </header>
+
+    <!-- Views -->
+    <div class="views-container" id="viewsContainer">
+      <div class="views-track" id="viewsTrack">
+        <div class="view" id="hubView">
+          <div class="hub-scroll">
+            <div id="sessionsList"></div>
+            <div class="hub-bottom-actions" id="hubBottomActions">
+              <button class="new-session-btn" id="newSessionBtn">+ New Session</button>
+              <button class="cleanup-btn" id="cleanupBtn" disabled>Clean Up Stale</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="fs-prompt" id="fsPrompt">Tap for fullscreen</div>
-    <div class="listening-banner" id="listeningBanner">Listening...</div>
-
-    <div class="terminal" id="terminal">
-      <div class="connecting-msg" id="reconnectMsg">Connecting to terminal...</div>
-    </div>
-
-    <div class="input-area">
+    <!-- Input Area (terminal views) -->
+    <div class="input-area" id="inputArea" style="display:none">
+      <div class="listening-banner" id="listeningBanner">
+        <div class="listening-bars"><span></span><span></span><span></span><span></span><span></span></div>
+        <span>LISTENING</span>
+      </div>
       <div class="input-row">
-        <div class="input-wrapper">
-          <textarea
-            id="input"
-            rows="1"
-            placeholder="message"
-            autocomplete="off"
-            autocorrect="on"
-            spellcheck="true"
-          ></textarea>
-        </div>
-        <button class="action-btn mic-btn" id="micBtn" style="position:relative;">
+        <textarea id="input" rows="1" placeholder="message" autocomplete="off" autocorrect="on" spellcheck="true"></textarea>
+        <button class="action-btn mic-btn" id="micBtn" aria-label="Voice input">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="1" width="6" height="12" rx="3"/>
             <path d="M19 10v1a7 7 0 0 1-14 0v-1"/>
             <line x1="12" y1="19" x2="12" y2="23"/>
           </svg>
-          <div class="mic-pulse"></div>
         </button>
-        <button class="action-btn send-btn" id="sendBtn" disabled>
-          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        <button class="action-btn send-btn" id="sendBtn" disabled aria-label="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Theme Picker -->
-  <div class="theme-picker" id="themePicker">
-    <div class="theme-picker-sheet">
-      <div class="theme-picker-title">Theme</div>
-      <div class="theme-options" id="themeOptions"></div>
+  <!-- Project Browser -->
+  <div class="overlay" id="projectBrowser" style="display:none">
+    <div class="overlay-sheet">
+      <div class="overlay-header">
+        <button class="back-btn" id="projectBackBtn">&larr;</button>
+        <span>Select Project</span>
+      </div>
+      <div class="projects-list" id="projectsList"></div>
     </div>
   </div>
 
-  <script>
-    // ── Elements ──
-    const terminal = document.getElementById('terminal');
-    const reconnectMsg = document.getElementById('reconnectMsg');
-    const input = document.getElementById('input');
-    const sendBtn = document.getElementById('sendBtn');
-    const micBtn = document.getElementById('micBtn');
-    const statusDot = document.getElementById('statusDot');
-    const statusText = document.getElementById('statusText');
-    const listeningBanner = document.getElementById('listeningBanner');
-    const themeBtn = document.getElementById('themeBtn');
-    const themePicker = document.getElementById('themePicker');
-    const themeOptions = document.getElementById('themeOptions');
-    const fsPrompt = document.getElementById('fsPrompt');
-    const themeColorMeta = document.getElementById('themeColor');
+  <!-- Settings -->
+  <div class="overlay" id="settingsOverlay" style="display:none">
+    <div class="overlay-sheet">
+      <div class="overlay-header">
+        <button class="back-btn" id="settingsBackBtn">&larr;</button>
+        <span>Settings</span>
+      </div>
+      <div class="settings-content">
+        <div class="setting-group">
+          <div class="setting-label">THEME</div>
+          <div class="theme-options" id="themeOptions"></div>
+        </div>
+        <div class="setting-group">
+          <div class="setting-label">VOICE</div>
+          <label class="toggle-row">
+            <span>Instant Send</span>
+            <input type="checkbox" id="instantToggle">
+            <div class="toggle-track"><div class="toggle-thumb"></div></div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    let ws = null;
-    let reconnectTimer = null;
-    let isConnected = false;
+  <script type="module">
+    import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5/+esm';
+    import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0/+esm';
+
+    // ── Auth ──
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token') || localStorage.getItem('mt-token');
+    if (token) localStorage.setItem('mt-token', token);
+
+    // ── State ──
+    const state = {
+      viewIndex: 0,
+      openSessions: [],
+      terminals: {},
+      sessions: [],
+      grouped: [],
+      ws: null,
+      connected: false,
+      subscribedTo: null,
+      settings: {
+        theme: localStorage.getItem('mt-theme') || 'midnight',
+        instantSend: localStorage.getItem('mt-instant') === 'true',
+      },
+    };
 
     // ── Themes ──
     const themes = [
-      { id: 'midnight',  name: 'Midnight',  desc: 'Dark mono, red accent',    dot: '#e94560' },
-      { id: 'terminal',  name: 'Terminal',   desc: 'Classic green on black',   dot: '#00ff41' },
-      { id: 'paper',     name: 'Paper',      desc: 'Light, warm, minimal',     dot: '#e94560' },
-      { id: 'sage',      name: 'Sage',       desc: 'Dark olive, muted green',  dot: '#8fbc8f' },
-      { id: 'electric',  name: 'Electric',   desc: 'Deep purple, cyan accent', dot: '#00d4ff' },
+      { id: 'midnight', name: 'Midnight', dot: '#e94560' },
+      { id: 'terminal', name: 'Terminal', dot: '#00ff41' },
+      { id: 'paper',    name: 'Paper',    dot: '#e94560' },
+      { id: 'sage',     name: 'Sage',     dot: '#8fbc8f' },
+      { id: 'electric', name: 'Electric', dot: '#00d4ff' },
     ];
 
-    let currentTheme = localStorage.getItem('claudeqr-theme') || 'midnight';
+    const xtermThemes = {
+      midnight: { background: '#0a0a0a', foreground: '#e0e0e0', cursor: '#e94560', selectionBackground: '#e9456030' },
+      terminal: { background: '#000000', foreground: '#00dd38', cursor: '#00ff41', selectionBackground: '#00ff4120' },
+      paper:    { background: '#faf8f5', foreground: '#333333', cursor: '#e94560', selectionBackground: '#e9456020' },
+      sage:     { background: '#161b16', foreground: '#c0d8c0', cursor: '#8fbc8f', selectionBackground: '#8fbc8f20' },
+      electric: { background: '#080014', foreground: '#b0c0ee', cursor: '#00d4ff', selectionBackground: '#00d4ff20' },
+    };
 
+    // ── Elements ──
+    const $ = id => document.getElementById(id);
+    const topbarHub = $('topbarHub');
+    const topbarTerm = $('topbarTerm');
+    const topbarSessionName = $('topbarSessionName');
+    const sessionDots = $('sessionDots');
+    const viewsTrack = $('viewsTrack');
+    const viewsContainer = $('viewsContainer');
+    const sessionsList = $('sessionsList');
+    const inputArea = $('inputArea');
+    const inputEl = $('input');
+    const micBtn = $('micBtn');
+    const sendBtn = $('sendBtn');
+    const listeningBanner = $('listeningBanner');
+    const connDot = $('connDot');
+    const themeOptions = $('themeOptions');
+    const instantToggle = $('instantToggle');
+    const projectBrowser = $('projectBrowser');
+    const projectsList = $('projectsList');
+    const settingsOverlay = $('settingsOverlay');
+    const topbar = $('topbar');
+    const cleanupBtn = $('cleanupBtn');
+
+    // ── Theme Management ──
     function applyTheme(id) {
-      currentTheme = id;
+      state.settings.theme = id;
       document.documentElement.setAttribute('data-theme', id);
-      localStorage.setItem('claudeqr-theme', id);
-
-      // Update meta theme-color for browser chrome
-      const theme = themes.find(t => t.id === id);
-      const style = getComputedStyle(document.documentElement);
-      const bgColor = style.getPropertyValue('--bg').trim();
-      themeColorMeta.setAttribute('content', bgColor);
-
+      localStorage.setItem('mt-theme', id);
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      $('themeColor').setAttribute('content', bg);
+      const xt = xtermThemes[id];
+      for (const t of Object.values(state.terminals)) {
+        t.term.options.theme = xt;
+      }
       renderThemeOptions();
     }
 
     function renderThemeOptions() {
       themeOptions.innerHTML = themes.map(t => `
-        <button class="theme-option ${t.id === currentTheme ? 'active' : ''}" data-theme="${t.id}">
+        <button class="theme-option ${t.id === state.settings.theme ? 'active' : ''}" data-tid="${t.id}">
           <div class="theme-option-dot" style="background:${t.dot}"></div>
-          <div class="theme-option-info">
-            <div class="theme-option-name">${t.name}</div>
-            <div class="theme-option-desc">${t.desc}</div>
-          </div>
+          <span class="theme-option-name">${t.name}</span>
         </button>
       `).join('');
-
-      themeOptions.querySelectorAll('.theme-option').forEach(btn => {
-        btn.addEventListener('click', () => {
-          applyTheme(btn.dataset.theme);
-          setTimeout(() => themePicker.classList.remove('open'), 150);
-        });
+      themeOptions.querySelectorAll('.theme-option').forEach(b => {
+        b.onclick = () => applyTheme(b.dataset.tid);
       });
     }
 
-    themeBtn.addEventListener('click', () => {
+    applyTheme(state.settings.theme);
+
+    // ── Settings ──
+    $('settingsBtn').onclick = () => {
       renderThemeOptions();
-      themePicker.classList.add('open');
-    });
-
-    themePicker.addEventListener('click', (e) => {
-      if (e.target === themePicker) themePicker.classList.remove('open');
-    });
-
-    applyTheme(currentTheme);
-
-    // ── Fullscreen ──
-    function isFullscreen() {
-      return !!(document.fullscreenElement || document.webkitFullscreenElement);
-    }
-
-    function isStandalone() {
-      return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-    }
-
-    function requestFullscreen() {
-      const el = document.documentElement;
-      if (el.requestFullscreen) {
-        el.requestFullscreen().catch(() => {});
-      } else if (el.webkitRequestFullscreen) {
-        el.webkitRequestFullscreen();
-      }
-      fsPrompt.classList.remove('visible');
-    }
-
-    // Show fullscreen prompt on Android Chrome (iOS doesn't support Fullscreen API)
-    if (!isStandalone() && !isFullscreen() && document.documentElement.requestFullscreen) {
-      fsPrompt.classList.add('visible');
-      fsPrompt.addEventListener('click', requestFullscreen);
-    }
-
-    // ── ANSI stripping ──
-    function stripAnsi(str) {
-      return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
-                .replace(/\x1b\][^\x07]*\x07/g, '')
-                .replace(/\x1b[()][AB012]/g, '')
-                .replace(/\x1b[\[\]()#;?]*[0-9;]*[a-zA-Z@]/g, '');
-    }
-
-    // ── Status ──
-    function setStatus(connected) {
-      isConnected = connected;
-      statusDot.className = 'status-dot' + (connected ? ' connected' : '');
-      statusText.textContent = connected ? 'Connected' : 'Disconnected';
-      sendBtn.disabled = !connected;
-    }
+      instantToggle.checked = state.settings.instantSend;
+      settingsOverlay.style.display = 'flex';
+    };
+    $('settingsBackBtn').onclick = () => settingsOverlay.style.display = 'none';
+    instantToggle.onchange = () => {
+      state.settings.instantSend = instantToggle.checked;
+      localStorage.setItem('mt-instant', String(instantToggle.checked));
+    };
 
     // ── WebSocket ──
-    function connect() {
-      const params = new URLSearchParams(window.location.search);
-      const token = params.get('token');
+    function connectWS() {
+      if (!token) return;
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      state.ws = new WebSocket(`${proto}//${location.host}?token=${token}`);
 
-      if (!token) {
-        reconnectMsg.textContent = 'NO AUTH TOKEN — SCAN QR AGAIN';
-        return;
-      }
-
-      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${protocol}//${location.host}?token=${token}`);
-
-      ws.onopen = () => {
-        setStatus(true);
-        reconnectMsg.style.display = 'none';
+      state.ws.onopen = () => {
+        state.connected = true;
+        connDot.classList.add('connected');
+        if (state.subscribedTo) {
+          wsSend({ type: 'subscribe', session: state.subscribedTo });
+        }
       };
 
-      ws.onmessage = (event) => {
+      state.ws.onmessage = (e) => {
         try {
-          const msg = JSON.parse(event.data);
-          if (msg.type === 'output') {
-            const cleaned = stripAnsi(msg.data).trimEnd();
-            terminal.textContent = cleaned;
-            terminal.scrollTop = terminal.scrollHeight;
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'sessions') {
+            state.sessions = msg.data;
+            state.grouped = msg.grouped || [];
+            renderHub();
+            pruneClosedSessions();
+          } else if (msg.type === 'output') {
+            updateTerminal(msg.session, msg.data);
+          } else if (msg.type === 'killed') {
+            wsSend({ type: 'list' });
+          } else if (msg.type === 'cleaned') {
+            wsSend({ type: 'list' });
           }
         } catch {}
       };
 
-      ws.onclose = () => {
-        setStatus(false);
-        reconnectMsg.style.display = 'block';
-        reconnectMsg.textContent = 'Disconnected — reconnecting...';
-        reconnectTimer = setTimeout(connect, 2000);
+      state.ws.onclose = () => {
+        state.connected = false;
+        connDot.classList.remove('connected');
+        setTimeout(connectWS, 2000);
       };
 
-      ws.onerror = () => ws.close();
+      state.ws.onerror = () => { try { state.ws.close(); } catch {} };
     }
 
-    // ── Send ──
-    function send() {
-      const text = input.value.trim();
-      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-      ws.send(JSON.stringify({ type: 'input', data: text }));
-      input.value = '';
-      autoResize();
-      input.focus();
+    function wsSend(msg) {
+      if (state.ws?.readyState === 1) state.ws.send(JSON.stringify(msg));
     }
 
-    function autoResize() {
-      input.style.height = 'auto';
-      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    function pruneClosedSessions() {
+      const activeNames = new Set(state.sessions.map(s => s.sessionName));
+      for (let i = state.openSessions.length - 1; i >= 0; i--) {
+        const name = state.openSessions[i];
+        if (!activeNames.has(name)) {
+          const t = state.terminals[name];
+          if (t) { t.term.dispose(); t.el.remove(); delete state.terminals[name]; }
+          state.openSessions.splice(i, 1);
+        }
+      }
+      if (state.viewIndex > state.openSessions.length) navigateTo(0);
+      else if (state.viewIndex > 0) renderSessionDots();
     }
 
-    input.addEventListener('input', autoResize);
+    // ── Kill helpers ──
+    async function killSession(sessionName) {
+      try {
+        await fetch(`/api/sessions/${encodeURIComponent(sessionName)}?token=${token}`, { method: 'DELETE' });
+        wsSend({ type: 'list' });
+      } catch {}
+    }
 
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        send();
+    async function killGroupStale(projectName) {
+      const group = state.grouped.find(g => g.projectName === projectName);
+      if (!group) return;
+      const staleSessions = group.sessions.filter(s => s.status === 'stale');
+      await Promise.all(staleSessions.map(s =>
+        fetch(`/api/sessions/${encodeURIComponent(s.sessionName)}?token=${token}`, { method: 'DELETE' })
+      ));
+      wsSend({ type: 'list' });
+    }
+
+    async function cleanupAllStale() {
+      try {
+        await fetch(`/api/sessions/cleanup?token=${token}`, { method: 'POST' });
+        wsSend({ type: 'list' });
+      } catch {}
+    }
+
+    cleanupBtn.onclick = cleanupAllStale;
+
+    // ── Navigation ──
+    function navigateTo(index) {
+      const max = state.openSessions.length;
+      state.viewIndex = Math.max(0, Math.min(index, max));
+      viewsTrack.style.transform = `translateX(-${state.viewIndex * 100}%)`;
+
+      if (state.viewIndex === 0) {
+        topbarHub.style.display = 'flex';
+        topbarTerm.style.display = 'none';
+        inputArea.style.display = 'none';
+        if (state.subscribedTo) {
+          wsSend({ type: 'unsubscribe', session: state.subscribedTo });
+          state.subscribedTo = null;
+        }
+      } else {
+        topbarHub.style.display = 'none';
+        topbarTerm.style.display = 'flex';
+        inputArea.style.display = 'block';
+        const sessionName = state.openSessions[state.viewIndex - 1];
+        const meta = state.sessions.find(s => s.sessionName === sessionName);
+        topbarSessionName.textContent = meta?.projectName || sessionName;
+        renderSessionDots();
+        if (state.subscribedTo !== sessionName) {
+          if (state.subscribedTo) wsSend({ type: 'unsubscribe', session: state.subscribedTo });
+          wsSend({ type: 'subscribe', session: sessionName });
+          state.subscribedTo = sessionName;
+        }
+        const t = state.terminals[sessionName];
+        if (t) requestAnimationFrame(() => t.fitAddon.fit());
+      }
+    }
+
+    function renderSessionDots() {
+      sessionDots.innerHTML = state.openSessions.map((_, i) =>
+        `<div class="session-dot ${i === state.viewIndex - 1 ? 'active' : ''}"></div>`
+      ).join('');
+    }
+
+    $('backBtn').onclick = () => navigateTo(0);
+
+    // ── Hub Rendering ──
+    function formatAge(ts) {
+      const secs = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+      if (secs < 60) return `${secs}s`;
+      const mins = Math.floor(secs / 60);
+      if (mins < 60) return `${mins}m`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h`;
+      const days = Math.floor(hours / 24);
+      return `${days}d`;
+    }
+
+    function esc(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    const MAX_VISIBLE_STALE = 3;
+
+    function renderHub() {
+      const groups = state.grouped;
+
+      if (!groups || groups.length === 0) {
+        sessionsList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">&gt;_</div>
+            <div class="empty-text">No active sessions</div>
+            <div class="empty-sub">Start a Claude session on your Mac or tap + below</div>
+          </div>`;
+        cleanupBtn.disabled = true;
+        cleanupBtn.textContent = 'Clean Up Stale';
+        return;
+      }
+
+      // Count total stale across all groups
+      let totalStale = 0;
+      for (const g of groups) totalStale += g.staleCount;
+
+      cleanupBtn.disabled = totalStale === 0;
+      cleanupBtn.textContent = totalStale > 0 ? `Clean Up Stale (${totalStale})` : 'Clean Up Stale';
+
+      let html = '';
+
+      for (const group of groups) {
+        const allStale = group.sessions.every(s => s.status === 'stale');
+        const showKillAll = group.staleCount > 1;
+
+        html += `<div class="group-section">`;
+        html += `<div class="group-header">`;
+        html += `<span class="group-title">${esc(group.projectName)}`;
+        if (group.totalCount > 1) html += `<span class="group-count">(${group.totalCount})</span>`;
+        html += `</span>`;
+        if (showKillAll) {
+          html += `<button class="group-kill-all" data-project="${esc(group.projectName)}">Kill All Stale</button>`;
+        }
+        html += `</div>`;
+        html += `<div class="group-divider"></div>`;
+
+        // If all stale and more than MAX_VISIBLE_STALE, collapse
+        if (allStale && group.totalCount > MAX_VISIBLE_STALE) {
+          // Show summary
+          const oldest = group.sessions[group.sessions.length - 1];
+          html += `<div class="stale-summary">`;
+          html += `<span class="stale-summary-text">${group.totalCount} stale, oldest ${formatAge(oldest.lastActivity)} ago</span>`;
+          html += `<button class="group-kill-all" data-project="${esc(group.projectName)}">Kill All</button>`;
+          html += `</div>`;
+        } else {
+          // Show individual cards (non-stale first, then stale up to limit)
+          const nonStale = group.sessions.filter(s => s.status !== 'stale');
+          const stale = group.sessions.filter(s => s.status === 'stale');
+          const visibleStale = stale.slice(0, MAX_VISIBLE_STALE);
+          const hiddenStaleCount = stale.length - visibleStale.length;
+
+          for (const s of [...nonStale, ...visibleStale]) {
+            html += renderSessionCard(s);
+          }
+
+          if (hiddenStaleCount > 0) {
+            html += `<div class="stale-summary">`;
+            html += `<span class="stale-summary-text">+ ${hiddenStaleCount} more stale</span>`;
+            html += `<button class="group-kill-all" data-project="${esc(group.projectName)}">Kill All Stale</button>`;
+            html += `</div>`;
+          }
+        }
+
+        html += `</div>`;
+      }
+
+      sessionsList.innerHTML = html;
+
+      // Wire up card clicks (open session)
+      sessionsList.querySelectorAll('.session-card').forEach(card => {
+        card.onclick = (e) => {
+          // Don't open if kill button was clicked
+          if (e.target.closest('.kill-btn')) return;
+          openSession(card.dataset.session);
+        };
+      });
+
+      // Wire up individual kill buttons
+      sessionsList.querySelectorAll('.kill-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          killSession(btn.dataset.session);
+        };
+      });
+
+      // Wire up group "Kill All Stale" buttons
+      sessionsList.querySelectorAll('.group-kill-all').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          killGroupStale(btn.dataset.project);
+        };
+      });
+    }
+
+    function renderSessionCard(s) {
+      return `
+        <div class="session-card" data-session="${esc(s.sessionName)}">
+          <div class="status-dot ${s.status}"></div>
+          <div class="session-card-body">
+            <div class="session-card-row">
+              <span class="session-card-name">${esc(s.sessionName)}</span>
+              <div class="session-card-meta">
+                <span class="session-card-status">${s.status}</span>
+                <span class="session-card-age">${formatAge(s.lastActivity)}</span>
+              </div>
+            </div>
+          </div>
+          <button class="kill-btn" data-session="${esc(s.sessionName)}">&times;</button>
+        </div>`;
+    }
+
+    // ── Terminal Management ──
+    function openSession(sessionName) {
+      let idx = state.openSessions.indexOf(sessionName);
+      if (idx === -1) {
+        state.openSessions.push(sessionName);
+        idx = state.openSessions.length - 1;
+        createTerminalView(sessionName);
+      }
+      navigateTo(idx + 1);
+    }
+
+    function createTerminalView(sessionName) {
+      const view = document.createElement('div');
+      view.className = 'view terminal-view';
+      view.dataset.session = sessionName;
+
+      const container = document.createElement('div');
+      container.className = 'term-container';
+      view.appendChild(container);
+      viewsTrack.appendChild(view);
+
+      const term = new Terminal({
+        fontSize: 13,
+        fontFamily: "'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace",
+        theme: xtermThemes[state.settings.theme],
+        scrollback: 2000,
+        cursorBlink: false,
+        convertEol: true,
+        allowProposedApi: true,
+      });
+
+      const fitAddon = new FitAddon();
+      term.loadAddon(fitAddon);
+      term.open(container);
+      requestAnimationFrame(() => fitAddon.fit());
+
+      state.terminals[sessionName] = { term, fitAddon, el: view };
+    }
+
+    function updateTerminal(sessionName, rawOutput) {
+      const t = state.terminals[sessionName];
+      if (!t) return;
+      t.term.reset();
+      t.term.write(rawOutput);
+    }
+
+    window.addEventListener('resize', () => {
+      for (const t of Object.values(state.terminals)) {
+        try { t.fitAddon.fit(); } catch {}
       }
     });
 
-    sendBtn.addEventListener('click', send);
+    // ── Input ──
+    function sendInput() {
+      const text = inputEl.value.trim();
+      if (!text || !state.subscribedTo) return;
+      wsSend({ type: 'input', session: state.subscribedTo, data: text });
+      inputEl.value = '';
+      autoResize();
+      sendBtn.disabled = true;
+      inputEl.focus();
+    }
 
-    // ── Speech Recognition ──
+    function autoResize() {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+    }
+
+    inputEl.addEventListener('input', () => {
+      autoResize();
+      sendBtn.disabled = !inputEl.value.trim();
+    });
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendInput();
+      }
+    });
+
+    sendBtn.onclick = sendInput;
+
+    // ── Voice Input (press-and-hold) ──
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
     let isListening = false;
@@ -747,21 +1228,22 @@
         listeningBanner.classList.add('active');
       };
 
-      recognition.onresult = (event) => {
+      recognition.onresult = (e) => {
         let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+        for (let i = 0; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
         }
-        input.value = transcript;
+        inputEl.value = transcript;
         autoResize();
+        sendBtn.disabled = !transcript.trim();
       };
 
       recognition.onend = () => {
         isListening = false;
         micBtn.classList.remove('listening');
         listeningBanner.classList.remove('active');
-        if (input.value.trim()) {
-          send();
+        if (state.settings.instantSend && inputEl.value.trim()) {
+          sendInput();
         }
       };
 
@@ -771,26 +1253,116 @@
         listeningBanner.classList.remove('active');
       };
 
-      micBtn.addEventListener('click', () => {
-        if (isListening) {
-          recognition.stop();
-        } else {
-          recognition.start();
-        }
+      micBtn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (!isListening) recognition.start();
+      });
+      micBtn.addEventListener('pointerup', () => {
+        if (isListening) recognition.stop();
+      });
+      micBtn.addEventListener('pointerleave', () => {
+        if (isListening) recognition.stop();
       });
     } else {
       micBtn.style.display = 'none';
     }
 
-    // ── Prevent iOS zoom on double-tap ──
-    let lastTouchEnd = 0;
+    // ── Swipe Navigation (edge-only) ──
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let swiping = false;
+    const EDGE = 40;
+    const THRESHOLD = 60;
+
+    function onTouchStart(e) {
+      const x = e.touches[0].clientX;
+      if (x <= EDGE || x >= window.innerWidth - EDGE || e.currentTarget === topbar) {
+        touchStartX = x;
+        touchStartY = e.touches[0].clientY;
+        swiping = true;
+      }
+    }
+
+    function onTouchEnd(e) {
+      if (!swiping) return;
+      swiping = false;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+      if (Math.abs(dx) > THRESHOLD && dy < Math.abs(dx)) {
+        navigateTo(state.viewIndex + (dx > 0 ? -1 : 1));
+      }
+    }
+
+    viewsContainer.addEventListener('touchstart', onTouchStart, { passive: true });
+    viewsContainer.addEventListener('touchend', onTouchEnd, { passive: true });
+    topbar.addEventListener('touchstart', onTouchStart, { passive: true });
+    topbar.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    // ── Project Browser ──
+    $('newSessionBtn').onclick = async () => {
+      projectBrowser.style.display = 'flex';
+      projectsList.innerHTML = '<div class="empty-state"><div class="empty-text">Loading...</div></div>';
+      try {
+        const res = await fetch(`/api/projects?token=${token}`);
+        const projects = await res.json();
+        projectsList.innerHTML = projects.map(p => `
+          <div class="project-item" data-path="${esc(p.path)}">
+            <span>${esc(p.name)}</span>
+            ${p.hasActiveSession ? '<div class="project-live-dot"></div>' : ''}
+          </div>
+        `).join('');
+        projectsList.querySelectorAll('.project-item').forEach(item => {
+          item.onclick = async () => {
+            projectBrowser.style.display = 'none';
+            try {
+              const r = await fetch(`/api/sessions?token=${token}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectPath: item.dataset.path }),
+              });
+              const { sessionName } = await r.json();
+              setTimeout(() => {
+                wsSend({ type: 'list' });
+                setTimeout(() => openSession(sessionName), 1500);
+              }, 1500);
+            } catch (err) {
+              console.error('Spawn failed:', err);
+            }
+          };
+        });
+      } catch {
+        projectsList.innerHTML = '<div class="empty-state"><div class="empty-text">Failed to load</div></div>';
+      }
+    };
+
+    $('projectBackBtn').onclick = () => projectBrowser.style.display = 'none';
+
+    // ── Prevent iOS double-tap zoom ──
+    let lastTap = 0;
     document.addEventListener('touchend', (e) => {
       const now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault();
-      lastTouchEnd = now;
+      if (now - lastTap <= 300) e.preventDefault();
+      lastTap = now;
     }, false);
 
-    connect();
+    // ── Service Worker ──
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // ── Init ──
+    if (!token) {
+      sessionsList.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">&gt;_</div>
+          <div class="empty-text">No auth token</div>
+          <div class="empty-sub">Open the URL from: ./mobilterm start</div>
+        </div>`;
+      $('newSessionBtn').style.display = 'none';
+      cleanupBtn.style.display = 'none';
+    } else {
+      connectWS();
+    }
   </script>
 </body>
 </html>
