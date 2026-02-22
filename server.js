@@ -1,222 +1,210 @@
 const express = require('express');
 const { WebSocketServer } = require('ws');
 const http = require('http');
-const { execSync } = require('child_process');
 const crypto = require('crypto');
 const os = require('os');
 const path = require('path');
-const QRCode = require('qrcode');
 const fs = require('fs');
+const SessionManager = require('./session-manager');
 
-const SESSION_NAME = process.env.CLAUDEQR_SESSION || 'claude-qr';
-const PORT = parseInt(process.env.CLAUDEQR_PORT || '3456', 10);
-const INSTANCE_ID = process.env.CLAUDEQR_INSTANCE || 'default';
-const AUTH_TOKEN = crypto.randomBytes(3).toString('hex');
-const TMP_PREFIX = `/tmp/claudeqr-${INSTANCE_ID}`;
+const PORT = parseInt(process.env.MOBILTERM_PORT || '7777', 10);
+const TOKEN_FILE = path.join(__dirname, '.auth-token');
+
+// Persistent auth token
+let AUTH_TOKEN;
+if (fs.existsSync(TOKEN_FILE)) {
+  AUTH_TOKEN = fs.readFileSync(TOKEN_FILE, 'utf-8').trim();
+} else {
+  AUTH_TOKEN = crypto.randomBytes(3).toString('hex');
+  fs.writeFileSync(TOKEN_FILE, AUTH_TOKEN);
+}
 
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
-      }
+      if (iface.family === 'IPv4' && !iface.internal) return iface.address;
     }
   }
   return 'localhost';
 }
 
-function captureTmux() {
-  try {
-    return execSync(
-      `tmux capture-pane -t ${SESSION_NAME} -p -S -200 2>/dev/null`,
-      { encoding: 'utf-8', timeout: 2000 }
-    );
-  } catch {
-    return '[Waiting for terminal...]';
+function authCheck(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '') ||
+                req.query.token;
+  if (token !== AUTH_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
+  next();
 }
 
-function sendToTmux(text) {
-  execSync(`tmux send-keys -t ${SESSION_NAME} -l ${JSON.stringify(text)}`);
-  execSync(`tmux send-keys -t ${SESSION_NAME} Enter`);
-}
-
+const manager = new SessionManager();
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Short redirect — this is what the QR code points to
-app.get(`/${AUTH_TOKEN}`, (req, res) => {
-  res.redirect(`/?token=${AUTH_TOKEN}`);
+// ── REST API ──
+
+app.get('/api/sessions', authCheck, (req, res) => {
+  res.json(manager.listSessions());
 });
 
-// QR code page — opened on the Mac so user can scan with phone
-app.get('/qr', async (req, res) => {
-  const ip = getLocalIP();
-  const mobileUrl = `http://${ip}:${PORT}/${AUTH_TOKEN}`;
-  const qrSvg = await QRCode.toString(mobileUrl, { type: 'svg', margin: 2 });
-
-  res.send(`<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>claudeQR</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #1a1a2e;
-    color: #eee;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-  }
-  .card {
-    text-align: center;
-    background: #16213e;
-    border-radius: 20px;
-    padding: 40px 50px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  }
-  h1 { font-size: 28px; margin-bottom: 8px; letter-spacing: -0.5px; }
-  .subtitle { color: #8892a4; font-size: 15px; margin-bottom: 30px; }
-  .qr-container {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    display: inline-block;
-    margin-bottom: 24px;
-  }
-  .qr-container svg { width: 250px; height: 250px; }
-  .url {
-    font-family: 'SF Mono', monospace;
-    font-size: 12px;
-    color: #8892a4;
-    word-break: break-all;
-    max-width: 350px;
-    margin: 0 auto;
-  }
-  .status { margin-top: 20px; font-size: 14px; color: #e94560; }
-  .status.connected { color: #2ed573; }
-</style>
-</head><body>
-<div class="card">
-  <h1>claudeQR</h1>
-  <p class="subtitle">Scan with your phone to connect</p>
-  <div class="qr-container">${qrSvg}</div>
-  <p class="url">${mobileUrl}</p>
-  <p class="status" id="status">Waiting for phone to connect...</p>
-</div>
-<script>
-  const ws = new WebSocket((location.protocol === 'https:' ? 'wss:' : 'ws:') + '//' + location.host + '?token=${AUTH_TOKEN}&watcher=true');
-  ws.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'phone_connected') {
-        document.getElementById('status').textContent = 'Phone connected!';
-        document.getElementById('status').className = 'status connected';
-      }
-    } catch {}
-  };
-</script>
-</body></html>`);
+app.get('/api/sessions/grouped', authCheck, (req, res) => {
+  res.json(manager.groupedSessions());
 });
 
-const watchers = new Set();
+app.post('/api/sessions', authCheck, (req, res) => {
+  const { projectPath } = req.body;
+  if (!projectPath) return res.status(400).json({ error: 'projectPath required' });
+  try {
+    const sessionName = manager.spawn(projectPath);
+    res.json({ sessionName, status: 'spawned' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/sessions/:name', authCheck, (req, res) => {
+  const { name } = req.params;
+  const session = manager.getSession(name);
+  if (!session) {
+    return res.status(404).json({ error: 'Session not found' });
+  }
+  manager.killSession(name);
+  res.json({ killed: name });
+});
+
+app.post('/api/sessions/cleanup', authCheck, (req, res) => {
+  const killed = manager.killStale();
+  res.json({ killed, count: killed.length });
+});
+
+app.get('/api/projects', authCheck, (req, res) => {
+  res.json(manager.listProjects());
+});
+
+// ── WebSocket — multiplexed ──
 
 wss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const token = url.searchParams.get('token');
-  const isWatcher = url.searchParams.get('watcher') === 'true';
 
   if (token !== AUTH_TOKEN) {
     ws.close(4001, 'Unauthorized');
     return;
   }
 
-  if (isWatcher) {
-    watchers.add(ws);
-    ws.on('close', () => watchers.delete(ws));
-    return;
-  }
+  const subscriptions = new Map(); // sessionName -> listener
 
-  console.log('Phone connected');
+  // Send current session list on connect (grouped)
+  ws.send(JSON.stringify({ type: 'sessions', data: manager.listSessions(), grouped: manager.groupedSessions() }));
 
-  // Signal the QR pane to auto-close
-  try {
-    fs.writeFileSync(`${TMP_PREFIX}-connected`, 'true');
-  } catch {}
-
-  for (const w of watchers) {
-    try { w.send(JSON.stringify({ type: 'phone_connected' })); } catch {}
-  }
-
-  let lastOutput = '';
-  const output = captureTmux();
-  lastOutput = output;
-  ws.send(JSON.stringify({ type: 'output', data: output }));
-
-  const interval = setInterval(() => {
-    const current = captureTmux();
-    if (current !== lastOutput) {
-      lastOutput = current;
-      ws.send(JSON.stringify({ type: 'output', data: current }));
-    }
-  }, 500);
-
-  ws.on('message', (message) => {
+  ws.on('message', (raw) => {
     try {
-      const msg = JSON.parse(message.toString());
-      if (msg.type === 'input') {
-        sendToTmux(msg.data);
+      const msg = JSON.parse(raw.toString());
+
+      switch (msg.type) {
+        case 'subscribe': {
+          const session = manager.getSession(msg.session);
+          if (!session) {
+            ws.send(JSON.stringify({ type: 'error', message: `Session not found: ${msg.session}` }));
+            return;
+          }
+          if (subscriptions.has(msg.session)) return;
+
+          const listener = (output) => {
+            if (ws.readyState === 1) {
+              ws.send(JSON.stringify({ type: 'output', session: msg.session, data: output }));
+            }
+          };
+          session.bridge.on('output', listener);
+          session.bridge.subscribe();
+          subscriptions.set(msg.session, listener);
+
+          // Send last known output immediately
+          if (session.bridge.lastOutput) {
+            ws.send(JSON.stringify({ type: 'output', session: msg.session, data: session.bridge.lastOutput }));
+          }
+          break;
+        }
+
+        case 'unsubscribe': {
+          const sub = subscriptions.get(msg.session);
+          const session = manager.getSession(msg.session);
+          if (sub && session) {
+            session.bridge.removeListener('output', sub);
+            session.bridge.unsubscribe();
+            subscriptions.delete(msg.session);
+          }
+          break;
+        }
+
+        case 'input': {
+          const session = manager.getSession(msg.session);
+          if (session) session.bridge.sendInput(msg.data);
+          break;
+        }
+
+        case 'rawkeys': {
+          const session = manager.getSession(msg.session);
+          if (session) session.bridge.sendRawKeys(msg.data);
+          break;
+        }
+
+        case 'list': {
+          ws.send(JSON.stringify({ type: 'sessions', data: manager.listSessions(), grouped: manager.groupedSessions() }));
+          break;
+        }
+
+        case 'kill': {
+          if (msg.session) {
+            manager.killSession(msg.session);
+            ws.send(JSON.stringify({ type: 'killed', session: msg.session }));
+          }
+          break;
+        }
+
+        case 'cleanup': {
+          const killed = manager.killStale();
+          ws.send(JSON.stringify({ type: 'cleaned', killed, count: killed.length }));
+          break;
+        }
       }
     } catch {}
   });
 
   ws.on('close', () => {
-    clearInterval(interval);
-    console.log('Phone disconnected');
+    for (const [sessionName, listener] of subscriptions) {
+      const session = manager.getSession(sessionName);
+      if (session) {
+        session.bridge.removeListener('output', listener);
+        session.bridge.unsubscribe();
+      }
+    }
+    subscriptions.clear();
   });
 });
 
+// Broadcast session list updates to all connected clients
+setInterval(() => {
+  const sessions = manager.listSessions();
+  const grouped = manager.groupedSessions();
+  const msg = JSON.stringify({ type: 'sessions', data: sessions, grouped });
+  for (const client of wss.clients) {
+    if (client.readyState === 1) {
+      client.send(msg);
+    }
+  }
+}, 5000);
+
+manager.startDiscovery(5000);
+
 server.listen(PORT, '0.0.0.0', () => {
   const ip = getLocalIP();
-  const mobileUrl = `http://${ip}:${PORT}/${AUTH_TOKEN}`;
-  // Write connection info so the launcher script can read it
-  const infoPath = `${TMP_PREFIX}-info.json`;
-  fs.writeFileSync(infoPath, JSON.stringify({
-    mobileUrl,
-    qrUrl: `http://localhost:${PORT}/qr`,
-    token: AUTH_TOKEN,
-    session: SESSION_NAME,
-    port: PORT,
-    instance: INSTANCE_ID,
-  }));
-
-  // Pre-generate ASCII art QR to a text file
-  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*+=!?<>{}[]~;:';
-  const randChar = () => CHARS[Math.floor(Math.random() * CHARS.length)];
-  const qrData = QRCode.create(mobileUrl, { errorCorrectionLevel: 'L' });
-  const qrSize = qrData.modules.size;
-  const qrMods = qrData.modules.data;
-  const quiet = 2;
-  const asciiLines = ['', '  CLAUDEQR — SCAN TO CONNECT', ''];
-  for (let row = -quiet; row < qrSize + quiet; row++) {
-    let line = '    ';
-    for (let col = -quiet; col < qrSize + quiet; col++) {
-      if (row >= 0 && row < qrSize && col >= 0 && col < qrSize) {
-        line += qrMods[row * qrSize + col] ? randChar() + randChar() : '  ';
-      } else {
-        line += '  ';
-      }
-    }
-    asciiLines.push(line);
-  }
-  asciiLines.push('', '  ' + mobileUrl, '');
-  fs.writeFileSync(`${TMP_PREFIX}-ascii.txt`, asciiLines.join('\n'));
-
-  console.log(`claudeQR server ready on port ${PORT} (instance ${INSTANCE_ID})`);
+  console.log(`mobileTerm running on port ${PORT}`);
+  console.log(`Auth token: ${AUTH_TOKEN}`);
+  console.log(`Connect: http://${ip}:${PORT}/?token=${AUTH_TOKEN}`);
 });

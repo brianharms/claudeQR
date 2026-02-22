@@ -1,0 +1,95 @@
+#!/bin/bash
+# mobilterm — launcher/installer for mobileTerm server
+
+INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLIST_NAME="com.mobilterm.server"
+PLIST_SRC="$INSTALL_DIR/$PLIST_NAME.plist"
+PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
+TOKEN_FILE="$INSTALL_DIR/.auth-token"
+PORT=7777
+
+get_local_ip() {
+  ipconfig getifaddr en0 2>/dev/null || echo "localhost"
+}
+
+case "${1:-start}" in
+  install)
+    cd "$INSTALL_DIR"
+    npm install --production 2>&1
+    mkdir -p logs
+
+    # Generate token if needed
+    if [ ! -f "$TOKEN_FILE" ]; then
+      TOKEN=$(openssl rand -hex 3)
+      printf '%s' "$TOKEN" > "$TOKEN_FILE"
+    fi
+    TOKEN=$(cat "$TOKEN_FILE")
+
+    # Find node binary
+    NODE_PATH=$(which node)
+    if [ -z "$NODE_PATH" ]; then
+      echo "Error: node not found in PATH"
+      exit 1
+    fi
+
+    # Install launchd plist with paths substituted
+    sed -e "s|__INSTALL_DIR__|$INSTALL_DIR|g" \
+        -e "s|__NODE_PATH__|$NODE_PATH|g" \
+        -e "s|__HOME__|$HOME|g" \
+        "$PLIST_SRC" > "$PLIST_DST"
+
+    # Load the agent
+    launchctl unload "$PLIST_DST" 2>/dev/null
+    launchctl load "$PLIST_DST" 2>/dev/null
+
+    IP=$(get_local_ip)
+    echo ""
+    echo "mobileTerm installed and running on port $PORT"
+    echo "Auth token: $TOKEN"
+    echo "Connect from phone: http://$IP:$PORT/?token=$TOKEN"
+    echo ""
+    ;;
+
+  start)
+    cd "$INSTALL_DIR"
+    if [ ! -f "$TOKEN_FILE" ]; then
+      TOKEN=$(openssl rand -hex 3)
+      printf '%s' "$TOKEN" > "$TOKEN_FILE"
+    fi
+    node server.js
+    ;;
+
+  stop)
+    launchctl stop "$PLIST_NAME" 2>/dev/null
+    echo "mobileTerm stopped"
+    ;;
+
+  restart)
+    launchctl stop "$PLIST_NAME" 2>/dev/null
+    sleep 1
+    launchctl start "$PLIST_NAME" 2>/dev/null
+    echo "mobileTerm restarted"
+    ;;
+
+  status)
+    if launchctl list 2>/dev/null | grep -q "$PLIST_NAME"; then
+      TOKEN=$(cat "$TOKEN_FILE" 2>/dev/null)
+      IP=$(get_local_ip)
+      echo "mobileTerm is running on port $PORT"
+      echo "Connect: http://$IP:$PORT/?token=$TOKEN"
+    else
+      echo "mobileTerm is not running"
+    fi
+    ;;
+
+  uninstall)
+    launchctl stop "$PLIST_NAME" 2>/dev/null
+    launchctl unload "$PLIST_DST" 2>/dev/null
+    rm -f "$PLIST_DST"
+    echo "mobileTerm uninstalled"
+    ;;
+
+  *)
+    echo "Usage: mobilterm [install|start|stop|restart|status|uninstall]"
+    ;;
+esac
