@@ -42,7 +42,7 @@ Implement the "mobileTerm — Session Management Overhaul" plan: transform the f
 
 ### Running Services
 - mobileTerm server: PID 46545, port 7777, `node server.js`
-- Access URL: `http://192.168.1.183:7777/?token=dd9104`
+- Access URL: `http://[LOCAL_IP]:7777/?token=[REDACTED]`
 
 ### Next Steps
 - Verify grouped hub UI on phone (refresh the page)
