@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const TerminalBridge = require('./terminal-bridge');
 
-const PROJECTS_DIR = path.join(process.env.HOME, 'Desktop', 'Claude Projects');
+const PROJECTS_DIR = path.join(process.env.HOME, 'Projects');
 const STALE_THRESHOLD_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 class SessionManager {

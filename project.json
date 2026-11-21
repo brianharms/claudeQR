@@ -1,0 +1,24 @@
+{
+  "name": "ClaudeQR",
+  "category": "tool",
+  "description": "Terminal-based QR bridge for managing Claude Code tmux sessions from a phone.",
+  "about": "A tool for launching and managing Claude Code CLI sessions with phone-based remote control. The bash launcher creates tmux sessions with a Node.js WebSocket server, displaying a QR code in the terminal for phone pairing. The phone web UI shows a hub of all active tmux/Claude sessions grouped by project, with status indicators (working, idle, shell, stale) and kill controls.\n\nPredecessor to mobileTerm \u2014 the same session management concept evolved into a more polished form. Features token-based auth with persistent credentials and WebSocket multiplexing for streaming terminal output to the phone.",
+  "starred": false,
+  "public": false,
+  "preview": null,
+  "github": null,
+  "tags": [
+    "node.js",
+    "javascript",
+    "qr-code"
+  ],
+  "motion": {
+    "hoverSpeed": 1.0,
+    "hoverAmplitude": 0.15,
+    "spinAxes": [
+      "y"
+    ],
+    "spinSpeed": 0.3,
+    "cursorInfluence": 0.08
+  }
+}
